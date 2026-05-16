@@ -1,0 +1,811 @@
+<!-- ================================================= -->
+<!-- MENACE 2 SOCIETY — UNIFIED AI LAB INTERFACE       -->
+<!-- AI IMAGE + VIDEO + COMIC GENERATOR                -->
+<!-- ================================================= -->
+
+<section class="ai-lab">
+
+    <h1 class="section-title">MENACE AI LAB</h1>
+
+    <p class="ai-subtext">
+        Create AI visuals, videos, comic books, characters,
+        storyboards, and cinematic concepts.
+    </p>
+
+    <div class="ai-container">
+
+        <!-- ====================================== -->
+        <!-- LEFT PANEL                             -->
+        <!-- ====================================== -->
+
+        <div class="ai-controls">
+
+            <label>Main Prompt</label>
+
+            <textarea
+            id="prompt"
+            placeholder="Describe your vision...
+Ex: DaMenace standing in front of broken mirrors in a red grunge city">
+            </textarea>
+
+            <!-- CREATIVE MODE -->
+
+            <label>Creative Mode</label>
+
+            <select id="creativeMode">
+
+                <option>AI Image</option>
+
+                <option>AI Video</option>
+
+                <option>Comic Book Page</option>
+
+                <option>Comic Character Design</option>
+
+                <option>Comic Storyboard</option>
+
+            </select>
+
+            <!-- STYLE -->
+
+            <label>Style</label>
+
+            <select id="styleType">
+
+                <option>Grunge</option>
+
+                <option>Cyberpunk</option>
+
+                <option>Streetwear</option>
+
+                <option>Y2K</option>
+
+                <option>Dark Fantasy</option>
+
+                <option>Horror Manga</option>
+
+                <option>Anime Noir</option>
+
+            </select>
+
+            <!-- COMIC DETAILS -->
+
+            <label>Scene / Character Details</label>
+
+            <textarea
+            id="comicDetails"
+            placeholder="Describe characters, environments, emotions, lighting, scenes, powers, outfits, etc.">
+            </textarea>
+
+            <!-- BUTTON -->
+
+            <button onclick="generateAI()">
+
+                GENERATE
+
+            </button>
+
+        </div>
+
+        <!-- ====================================== -->
+        <!-- RIGHT PANEL                            -->
+        <!-- ====================================== -->
+
+        <div class="ai-preview">
+
+            <div class="preview-box" id="previewBox">
+
+                <h2>MENACE AI</h2>
+
+                <p>
+                    Your AI creations appear here.
+                </p>
+
+                <div class="comic-preview-grid">
+
+                    <div class="comic-panel">
+                        PANEL 1
+                    </div>
+
+                    <div class="comic-panel">
+                        PANEL 2
+                    </div>
+
+                    <div class="comic-panel">
+                        PANEL 3
+                    </div>
+
+                    <div class="comic-panel">
+                        PANEL 4
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<style>
+
+/* ================================================= */
+/* MENACE AI LAB                                     */
+/* ================================================= */
+
+.ai-lab{
+
+    padding:120px 8%;
+
+    background:#050505;
+}
+
+.ai-subtext{
+
+    text-align:center;
+
+    color:#8f8f8f;
+
+    margin-top:-20px;
+
+    margin-bottom:60px;
+
+    letter-spacing:1px;
+}
+
+.ai-container{
+
+    display:grid;
+
+    grid-template-columns:420px 1fr;
+
+    gap:40px;
+}
+
+/* ====================================== */
+/* CONTROLS                               */
+/* ====================================== */
+
+.ai-controls{
+
+    background:#111;
+
+    border:1px solid #222;
+
+    padding:30px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:20px;
+}
+
+.ai-controls label{
+
+    font-size:0.9rem;
+
+    color:#aaa;
+
+    text-transform:uppercase;
+
+    letter-spacing:2px;
+}
+
+.ai-controls textarea{
+
+    background:#090909;
+
+    border:1px solid #222;
+
+    color:white;
+
+    padding:15px;
+
+    resize:none;
+
+    min-height:130px;
+
+    font-family:inherit;
+}
+
+.ai-controls select{
+
+    background:#090909;
+
+    border:1px solid #222;
+
+    color:white;
+
+    padding:15px;
+}
+
+.ai-controls button{
+
+    padding:18px;
+
+    background:#ff1e1e;
+
+    border:none;
+
+    color:white;
+
+    font-weight:bold;
+
+    letter-spacing:2px;
+
+    cursor:pointer;
+
+    transition:0.3s;
+}
+
+.ai-controls button:hover{
+
+    background:#ff3d3d;
+
+    transform:translateY(-2px);
+}
+
+/* ====================================== */
+/* PREVIEW                                */
+/* ====================================== */
+
+.ai-preview{
+
+    background:#0c0c0c;
+
+    border:1px solid #222;
+
+    min-height:700px;
+
+    overflow:hidden;
+
+    position:relative;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+}
+
+.preview-box{
+
+    width:100%;
+
+    padding:40px;
+
+    text-align:center;
+}
+
+.preview-box h2{
+
+    font-family:'Anton',sans-serif;
+
+    font-size:3rem;
+
+    letter-spacing:3px;
+
+    margin-bottom:20px;
+}
+
+.preview-box p{
+
+    color:#888;
+
+    margin-bottom:40px;
+}
+
+/* ====================================== */
+/* GENERATED IMAGE / VIDEO                */
+/* ====================================== */
+
+.generated-image{
+
+    width:100%;
+
+    max-height:800px;
+
+    object-fit:cover;
+}
+
+.generated-video{
+
+    width:100%;
+
+    max-height:800px;
+
+    object-fit:cover;
+}
+
+/* ====================================== */
+/* COMIC GRID                             */
+/* ====================================== */
+
+.comic-preview-grid{
+
+    display:grid;
+
+    grid-template-columns:1fr 1fr;
+
+    gap:15px;
+}
+
+.comic-panel{
+
+    background:#111;
+
+    border:2px solid #222;
+
+    min-height:240px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    overflow:hidden;
+
+    position:relative;
+
+    color:#666;
+
+    font-family:'Anton',sans-serif;
+
+    letter-spacing:2px;
+}
+
+.comic-panel img{
+
+    width:100%;
+
+    height:100%;
+
+    object-fit:cover;
+}
+
+.comic-panel::after{
+
+    content:'';
+
+    position:absolute;
+
+    inset:0;
+
+    background:
+    linear-gradient(
+    rgba(255,0,0,0.06),
+    rgba(0,0,0,0.25));
+
+    pointer-events:none;
+}
+
+/* ====================================== */
+/* LOADING                                */
+/* ====================================== */
+
+.loading{
+
+    animation:pulseAI 1s infinite;
+}
+
+@keyframes pulseAI{
+
+    0%{opacity:0.5;}
+
+    50%{opacity:1;}
+
+    100%{opacity:0.5;}
+}
+
+/* ====================================== */
+/* STORYBOARD                             */
+/* ====================================== */
+
+.storyboard{
+
+    text-align:left;
+
+    width:100%;
+}
+
+.storyboard-block{
+
+    margin-bottom:30px;
+
+    padding:20px;
+
+    background:#111;
+
+    border:1px solid #222;
+}
+
+.storyboard-block h3{
+
+    margin-bottom:10px;
+
+    color:#ff2e2e;
+}
+
+/* ====================================== */
+/* MOBILE                                 */
+/* ====================================== */
+
+@media(max-width:1000px){
+
+    .ai-container{
+
+        grid-template-columns:1fr;
+    }
+}
+
+@media(max-width:700px){
+
+    .comic-preview-grid{
+
+        grid-template-columns:1fr;
+    }
+}
+
+</style>
+
+<script>
+
+/* ================================================= */
+/* MENACE AI LAB                                     */
+/* ================================================= */
+
+async function generateAI(){
+
+    const prompt =
+    document.getElementById("prompt").value;
+
+    const creativeMode =
+    document.getElementById("creativeMode").value;
+
+    const styleType =
+    document.getElementById("styleType").value;
+
+    const comicDetails =
+    document.getElementById("comicDetails").value;
+
+    const previewBox =
+    document.getElementById("previewBox");
+
+    /* LOADING */
+
+    previewBox.innerHTML = `
+
+        <div class="loading">
+
+            <h2>GENERATING...</h2>
+
+            <p>
+                MENACE AI is building your universe.
+            </p>
+
+        </div>
+    `;
+
+    /* ================================================= */
+    /* AI IMAGE                                          */
+    /* ================================================= */
+
+    if(creativeMode === "AI Image"){
+
+        try{
+
+            const response = await fetch(
+            "https://api.openai.com/v1/images/generations",
+            {
+
+                method:"POST",
+
+                headers:{
+
+                    "Content-Type":"application/json",
+
+                    "Authorization":
+                    "Bearer YOUR_API_KEY"
+                },
+
+                body:JSON.stringify({
+
+                    model:"gpt-image-1",
+
+                    prompt:
+                    `
+                    ${styleType} style.
+                    ${prompt}
+                    ${comicDetails}
+                    `,
+
+                    size:"1024x1024"
+                })
+            });
+
+            const data =
+            await response.json();
+
+            previewBox.innerHTML = `
+
+                <img
+                src="${data.data[0].url}"
+                class="generated-image"/>
+            `;
+        }
+
+        catch(error){
+
+            showError();
+        }
+    }
+
+    /* ================================================= */
+    /* AI VIDEO                                          */
+    /* ================================================= */
+
+    else if(creativeMode === "AI Video"){
+
+        /*
+        CONNECT VIDEO API HERE
+
+        Examples:
+        RunwayML
+        Pika
+        Stable Video Diffusion
+        */
+
+        previewBox.innerHTML = `
+
+            <video
+            class="generated-video"
+            controls
+            autoplay
+            loop>
+
+                <source
+                src="your-video-url.mp4"
+                type="video/mp4">
+
+            </video>
+        `;
+    }
+
+    /* ================================================= */
+    /* COMIC BOOK PAGE                                   */
+    /* ================================================= */
+
+    else if(
+    creativeMode ===
+    "Comic Book Page"){
+
+        try{
+
+            const comicPrompts = [
+
+                `Panel 1:
+                ${prompt}
+                ${comicDetails}
+                ${styleType}`,
+
+                `Panel 2:
+                continuation scene
+                ${comicDetails}`,
+
+                `Panel 3:
+                dramatic emotional scene
+                ${comicDetails}`,
+
+                `Panel 4:
+                final cinematic confrontation
+                ${comicDetails}`
+            ];
+
+            let panels = [];
+
+            for(let i = 0; i < comicPrompts.length; i++){
+
+                const response = await fetch(
+                "https://api.openai.com/v1/images/generations",
+                {
+
+                    method:"POST",
+
+                    headers:{
+
+                        "Content-Type":"application/json",
+
+                        "Authorization":
+                        "Bearer YOUR_API_KEY"
+                    },
+
+                    body:JSON.stringify({
+
+                        model:"gpt-image-1",
+
+                        prompt:comicPrompts[i],
+
+                        size:"1024x1024"
+                    })
+                });
+
+                const data =
+                await response.json();
+
+                panels.push(
+                data.data[0].url);
+            }
+
+            previewBox.innerHTML = `
+
+                <div class="comic-preview-grid">
+
+                    <div class="comic-panel">
+                        <img src="${panels[0]}"/>
+                    </div>
+
+                    <div class="comic-panel">
+                        <img src="${panels[1]}"/>
+                    </div>
+
+                    <div class="comic-panel">
+                        <img src="${panels[2]}"/>
+                    </div>
+
+                    <div class="comic-panel">
+                        <img src="${panels[3]}"/>
+                    </div>
+
+                </div>
+            `;
+        }
+
+        catch(error){
+
+            showError();
+        }
+    }
+
+    /* ================================================= */
+    /* CHARACTER DESIGN                                  */
+    /* ================================================= */
+
+    else if(
+    creativeMode ===
+    "Comic Character Design"){
+
+        try{
+
+            const response = await fetch(
+            "https://api.openai.com/v1/images/generations",
+            {
+
+                method:"POST",
+
+                headers:{
+
+                    "Content-Type":"application/json",
+
+                    "Authorization":
+                    "Bearer YOUR_API_KEY"
+                },
+
+                body:JSON.stringify({
+
+                    model:"gpt-image-1",
+
+                    prompt:
+                    `
+                    Full body comic character sheet.
+                    ${prompt}
+                    ${comicDetails}
+                    ${styleType}
+                    cinematic comic style
+                    `,
+
+                    size:"1024x1024"
+                })
+            });
+
+            const data =
+            await response.json();
+
+            previewBox.innerHTML = `
+
+                <img
+                src="${data.data[0].url}"
+                class="generated-image"/>
+            `;
+        }
+
+        catch(error){
+
+            showError();
+        }
+    }
+
+    /* ================================================= */
+    /* STORYBOARD                                        */
+    /* ================================================= */
+
+    else if(
+    creativeMode ===
+    "Comic Storyboard"){
+
+        previewBox.innerHTML = `
+
+            <div class="storyboard">
+
+                <div class="storyboard-block">
+
+                    <h3>PANEL 1</h3>
+
+                    <p>
+                    Character introduction.
+                    Dark environment.
+                    Atmospheric lighting.
+                    </p>
+
+                </div>
+
+                <div class="storyboard-block">
+
+                    <h3>PANEL 2</h3>
+
+                    <p>
+                    Emotional conflict builds.
+                    Tension rises.
+                    </p>
+
+                </div>
+
+                <div class="storyboard-block">
+
+                    <h3>PANEL 3</h3>
+
+                    <p>
+                    Alternate reality appears.
+                    Chaos begins.
+                    </p>
+
+                </div>
+
+                <div class="storyboard-block">
+
+                    <h3>PANEL 4</h3>
+
+                    <p>
+                    Final transformation scene.
+                    Cinematic ending panel.
+                    </p>
+
+                </div>
+
+            </div>
+        `;
+    }
+}
+
+/* ================================================= */
+/* ERROR FUNCTION                                    */
+/* ================================================= */
+
+function showError(){
+
+    document.getElementById("previewBox")
+    .innerHTML = `
+
+        <h2>ERROR</h2>
+
+        <p>
+            AI generation failed.
+            Check your API key and API connection.
+        </p>
+    `;
+}
+
+</script>
