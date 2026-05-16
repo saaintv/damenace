@@ -1,0 +1,259 @@
+/* ======================================= */
+/* MENACE AI COMIC GENERATOR               */
+/* ======================================= */
+
+async function generateAI(){
+
+    const prompt =
+    document.getElementById("prompt").value;
+
+    const creativeMode =
+    document.getElementById("creativeMode").value;
+
+    const styleType =
+    document.getElementById("styleType").value;
+
+    const comicDetails =
+    document.getElementById("comicDetails").value;
+
+    const previewBox =
+    document.getElementById("previewBox");
+
+    previewBox.innerHTML = `
+        <div class="loading">
+            <h2>GENERATING...</h2>
+            <p>MENACE AI is building your universe.</p>
+        </div>
+    `;
+
+    /* ======================================= */
+    /* COMIC BOOK PAGE GENERATOR               */
+    /* ======================================= */
+
+    if(creativeMode === "Comic Book Page"){
+
+        try{
+
+            /*
+            Generate 4 comic panels
+            using AI image generation API
+            */
+
+            const comicPrompts = [
+
+                `Comic panel 1:
+                ${comicDetails}
+                ${styleType} grunge comic style`,
+
+                `Comic panel 2:
+                continuation scene
+                ${comicDetails}`,
+
+                `Comic panel 3:
+                emotional cinematic scene
+                ${comicDetails}`,
+
+                `Comic panel 4:
+                dramatic ending panel
+                ${comicDetails}`
+            ];
+
+            let generatedPanels = [];
+
+            for(let i = 0; i < comicPrompts.length; i++){
+
+                const response = await fetch(
+                "https://api.openai.com/v1/images/generations",
+                {
+                    method:"POST",
+
+                    headers:{
+                        "Content-Type":"application/json",
+
+                        "Authorization":
+                        "Bearer YOUR_API_KEY"
+                    },
+
+                    body:JSON.stringify({
+
+                        model:"gpt-image-1",
+
+                        prompt:comicPrompts[i],
+
+                        size:"1024x1024"
+                    })
+                });
+
+                const data =
+                await response.json();
+
+                generatedPanels.push(
+                data.data[0].url);
+            }
+
+            previewBox.innerHTML = `
+
+                <div class="comic-preview-grid">
+
+                    <div class="comic-panel">
+                        <img src="${generatedPanels[0]}"/>
+                    </div>
+
+                    <div class="comic-panel">
+                        <img src="${generatedPanels[1]}"/>
+                    </div>
+
+                    <div class="comic-panel">
+                        <img src="${generatedPanels[2]}"/>
+                    </div>
+
+                    <div class="comic-panel">
+                        <img src="${generatedPanels[3]}"/>
+                    </div>
+
+                </div>
+            `;
+
+        }
+
+        catch(error){
+
+            previewBox.innerHTML = `
+                <h2>ERROR</h2>
+
+                <p>
+                    Comic generation failed.
+                </p>
+            `;
+
+            console.log(error);
+        }
+    }
+
+    /* ======================================= */
+    /* COMIC CHARACTER DESIGN                  */
+    /* ======================================= */
+
+    else if(
+    creativeMode ===
+    "Comic Character Design"){
+
+        try{
+
+            const response = await fetch(
+            "https://api.openai.com/v1/images/generations",
+            {
+                method:"POST",
+
+                headers:{
+                    "Content-Type":"application/json",
+
+                    "Authorization":
+                    "Bearer YOUR_API_KEY"
+                },
+
+                body:JSON.stringify({
+
+                    model:"gpt-image-1",
+
+                    prompt:
+                    `
+                    Full body comic character sheet.
+                    ${comicDetails}
+                    ${styleType}
+                    cinematic grunge style
+                    `,
+                    size:"1024x1024"
+                })
+            });
+
+            const data =
+            await response.json();
+
+            previewBox.innerHTML = `
+                <img
+                src="${data.data[0].url}"
+                class="generated-image"/>
+            `;
+
+        }
+
+        catch(error){
+
+            console.log(error);
+        }
+    }
+
+    /* ======================================= */
+    /* COMIC STORYBOARD                        */
+    /* ======================================= */
+
+    else if(
+    creativeMode ===
+    "Comic Storyboard"){
+
+        previewBox.innerHTML = `
+
+        <div style="
+        text-align:left;
+        padding:40px;
+        width:100%;">
+
+            <h2 style="
+            margin-bottom:20px;">
+            STORYBOARD
+            </h2>
+
+            <div style="
+            margin-bottom:25px;">
+
+                <h3>PANEL 1</h3>
+
+                <p>
+                Character introduction scene.
+                Dark cinematic environment.
+                </p>
+
+            </div>
+
+            <div style="
+            margin-bottom:25px;">
+
+                <h3>PANEL 2</h3>
+
+                <p>
+                Emotional conflict develops.
+                Neon lighting and tension rise.
+                </p>
+
+            </div>
+
+            <div style="
+            margin-bottom:25px;">
+
+                <h3>PANEL 3</h3>
+
+                <p>
+                Reality distortion begins.
+                Alternate version appears.
+                </p>
+
+            </div>
+
+            <div>
+
+                <h3>PANEL 4</h3>
+
+                <p>
+                Final confrontation scene.
+                Chaos and transformation.
+                </p>
+
+            </div>
+
+        </div>
+        `;
+    }
+
+}
+</script>
