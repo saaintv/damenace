@@ -1,0 +1,599 @@
+<!-- ================================================= -->
+<!-- MENACE 2 SOCIETY — ULTIMATE WEBSITE UPGRADE       -->
+<!-- FEATURES PACK                                     -->
+<!-- ================================================= -->
+
+<!-- ============================================== -->
+<!-- 1. THREE.JS 3D HOMEPAGE                        -->
+<!-- ============================================== -->
+
+<!-- ADD INSIDE <head> -->
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+<!-- ADD ABOVE </body> -->
+
+<canvas id="bg3d"></canvas>
+
+<style>
+
+#bg3d{
+
+    position:fixed;
+
+    inset:0;
+
+    width:100%;
+
+    height:100%;
+
+    z-index:-2;
+
+    opacity:0.35;
+}
+
+body{
+
+    background:
+    radial-gradient(circle at top,
+    #111 0%,
+    #050505 70%);
+}
+
+</style>
+
+<script>
+
+/* ============================================== */
+/* 3D BACKGROUND                                 */
+/* ============================================== */
+
+const scene = new THREE.Scene();
+
+const camera =
+new THREE.PerspectiveCamera(
+75,
+window.innerWidth/window.innerHeight,
+0.1,
+1000
+);
+
+const renderer =
+new THREE.WebGLRenderer({
+
+    canvas:
+    document.getElementById("bg3d"),
+
+    alpha:true
+});
+
+renderer.setSize(
+window.innerWidth,
+window.innerHeight
+);
+
+const geometry =
+new THREE.TorusKnotGeometry(10,3,100,16);
+
+const material =
+new THREE.MeshStandardMaterial({
+
+    color:0xff1e1e,
+
+    wireframe:true
+});
+
+const torus =
+new THREE.Mesh(
+geometry,
+material
+);
+
+scene.add(torus);
+
+const light =
+new THREE.PointLight(0xffffff,2);
+
+light.position.set(20,20,20);
+
+scene.add(light);
+
+camera.position.z = 30;
+
+function animate(){
+
+    requestAnimationFrame(animate);
+
+    torus.rotation.x += 0.003;
+
+    torus.rotation.y += 0.005;
+
+    renderer.render(scene,camera);
+}
+
+animate();
+
+</script>
+
+<!-- ============================================== -->
+<!-- 2. DARK LUXURY UI                             -->
+<!-- ============================================== -->
+
+<style>
+
+body{
+
+    font-family:'Montserrat',sans-serif;
+
+    color:white;
+}
+
+.glass{
+
+    background:
+    rgba(255,255,255,0.05);
+
+    backdrop-filter:blur(20px);
+
+    border:
+    1px solid rgba(255,255,255,0.08);
+
+    box-shadow:
+    0 0 30px rgba(0,0,0,0.5);
+}
+
+</style>
+
+<!-- ============================================== -->
+<!-- 3. LOGIN / SIGNUP SYSTEM                      -->
+<!-- ============================================== -->
+
+<section class="auth glass">
+
+    <h1>MENACE ACCOUNT</h1>
+
+    <input type="email"
+    placeholder="Email">
+
+    <input type="password"
+    placeholder="Password">
+
+    <button onclick="signup()">
+        SIGN UP
+    </button>
+
+    <button onclick="login()">
+        LOGIN
+    </button>
+
+</section>
+
+<script>
+
+/* ============================================== */
+/* FIREBASE AUTH                                  */
+/* ============================================== */
+
+/*
+INSTALL FIREBASE
+
+https://firebase.google.com
+*/
+
+function signup(){
+
+    alert("Connect Firebase signup.");
+}
+
+function login(){
+
+    alert("Connect Firebase login.");
+}
+
+</script>
+
+<!-- ============================================== -->
+<!-- 4. USER ACCOUNTS                              -->
+<!-- ============================================== -->
+
+<section class="dashboard glass">
+
+    <h1>PROFILE</h1>
+
+    <div class="profile-card">
+
+        <img src="avatar.png">
+
+        <h2>@saaintdamenace</h2>
+
+        <p>Creator • Designer • Visionary</p>
+
+    </div>
+
+</section>
+
+<!-- ============================================== -->
+<!-- 5. CART SYSTEM                                -->
+<!-- ============================================== -->
+
+<section class="cart glass">
+
+    <h1>CART</h1>
+
+    <div id="cartItems"></div>
+
+    <h2 id="total">
+        Total: $0
+    </h2>
+
+</section>
+
+<script>
+
+let cart = [];
+
+function addToCart(name,price){
+
+    cart.push({name,price});
+
+    renderCart();
+}
+
+function renderCart(){
+
+    const cartItems =
+    document.getElementById("cartItems");
+
+    cartItems.innerHTML = "";
+
+    let total = 0;
+
+    cart.forEach(item=>{
+
+        total += item.price;
+
+        cartItems.innerHTML += `
+
+            <div class="cart-item">
+
+                <p>${item.name}</p>
+
+                <span>$${item.price}</span>
+
+            </div>
+        `;
+    });
+
+    document.getElementById("total")
+    .innerText =
+    `Total: $${total}`;
+}
+
+</script>
+
+<!-- ============================================== -->
+<!-- 6. STRIPE CHECKOUT                            -->
+<!-- ============================================== -->
+
+<script src="https://js.stripe.com/v3/"></script>
+
+<button onclick="checkout()">
+    CHECKOUT
+</button>
+
+<script>
+
+const stripe =
+Stripe("YOUR_STRIPE_PUBLIC_KEY");
+
+async function checkout(){
+
+    /*
+    CONNECT STRIPE BACKEND
+    */
+
+    alert("Stripe checkout connected.");
+}
+
+</script>
+
+<!-- ============================================== -->
+<!-- 7. AI CHATBOT ASSISTANT                       -->
+<!-- ============================================== -->
+
+<section class="chatbot glass">
+
+    <div class="chat-header">
+
+        MENACE AI ASSISTANT
+
+    </div>
+
+    <div id="chatMessages">
+
+        <div class="bot">
+
+            Welcome to MENACE AI.
+
+        </div>
+
+    </div>
+
+    <div class="chat-input">
+
+        <input
+        id="chatInput"
+        placeholder="Ask MENACE AI anything...">
+
+        <button onclick="sendMessage()">
+            SEND
+        </button>
+
+    </div>
+
+</section>
+
+<script>
+
+async function sendMessage(){
+
+    const input =
+    document.getElementById("chatInput");
+
+    const messages =
+    document.getElementById("chatMessages");
+
+    messages.innerHTML += `
+        <div class="user">
+            ${input.value}
+        </div>
+    `;
+
+    /*
+    CONNECT OPENAI CHAT API HERE
+    */
+
+    messages.innerHTML += `
+        <div class="bot">
+            AI response generated.
+        </div>
+    `;
+
+    input.value = "";
+}
+
+</script>
+
+<!-- ============================================== -->
+<!-- 8. AI VIDEO DASHBOARD                         -->
+<!-- ============================================== -->
+
+<section class="video-dashboard glass">
+
+    <h1>AI VIDEO LAB</h1>
+
+    <textarea
+    placeholder="Describe your cinematic video...">
+    </textarea>
+
+    <button>
+        GENERATE VIDEO
+    </button>
+
+    <video controls>
+
+        <source
+        src="video.mp4"
+        type="video/mp4">
+
+    </video>
+
+</section>
+
+<!-- ============================================== -->
+<!-- 9. AI COMIC PDF EXPORT                        -->
+<!-- ============================================== -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<button onclick="exportPDF()">
+
+    EXPORT COMIC PDF
+
+</button>
+
+<script>
+
+async function exportPDF(){
+
+    const { jsPDF } =
+    window.jspdf;
+
+    const doc =
+    new jsPDF();
+
+    doc.text(
+    "MENACE COMIC",
+    20,
+    20
+    );
+
+    doc.save(
+    "menace-comic.pdf"
+    );
+}
+
+</script>
+
+<!-- ============================================== -->
+<!-- 10. DRAG & DROP EDITOR                        -->
+<!-- ============================================== -->
+
+<section class="editor glass">
+
+    <h1>DRAG & DROP EDITOR</h1>
+
+    <div class="drop-zone"
+    draggable="true">
+
+        DROP IMAGES HERE
+
+    </div>
+
+</section>
+
+<style>
+
+.drop-zone{
+
+    border:2px dashed #ff1e1e;
+
+    min-height:250px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    margin-top:20px;
+}
+
+</style>
+
+<!-- ============================================== -->
+<!-- 11. ANIMATED PAGE TRANSITIONS                 -->
+<!-- ============================================== -->
+
+<style>
+
+.fade-up{
+
+    animation:
+    fadeUp 1s ease;
+}
+
+@keyframes fadeUp{
+
+    from{
+
+        opacity:0;
+
+        transform:
+        translateY(60px);
+    }
+
+    to{
+
+        opacity:1;
+
+        transform:
+        translateY(0);
+    }
+}
+
+</style>
+
+<!-- ============================================== -->
+<!-- 12. MOBILE APP PWA SETUP                      -->
+<!-- ============================================== -->
+
+<!-- ADD INSIDE <head> -->
+
+<link rel="manifest"
+href="manifest.json">
+
+<meta name="theme-color"
+content="#000000">
+
+<script>
+
+if("serviceWorker" in navigator){
+
+    navigator.serviceWorker
+    .register("service-worker.js");
+}
+
+</script>
+
+<!-- ============================================== -->
+<!-- 13. GLOBAL UI STYLES                          -->
+<!-- ============================================== -->
+
+<style>
+
+section{
+
+    margin:60px 0;
+
+    padding:40px;
+
+    border-radius:20px;
+}
+
+input,
+textarea,
+button{
+
+    width:100%;
+
+    padding:15px;
+
+    margin-top:15px;
+
+    background:#0a0a0a;
+
+    border:1px solid #222;
+
+    color:white;
+}
+
+button{
+
+    cursor:pointer;
+
+    background:#ff1e1e;
+
+    transition:0.3s;
+}
+
+button:hover{
+
+    background:#ff3b3b;
+}
+
+.chatbot{
+
+    max-width:500px;
+}
+
+#chatMessages{
+
+    max-height:300px;
+
+    overflow-y:auto;
+
+    margin:20px 0;
+}
+
+.bot,
+.user{
+
+    padding:12px;
+
+    margin:10px 0;
+
+    border-radius:12px;
+}
+
+.bot{
+
+    background:#151515;
+}
+
+.user{
+
+    background:#ff1e1e;
+}
+
+</style>
