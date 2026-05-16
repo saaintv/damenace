@@ -1,0 +1,15 @@
+<!-- ======================================= -->
+<!-- ADD THIS INSIDE previewBox DEFAULT AREA -->
+<!-- ======================================= -->
+
+<div class="comic-preview-grid" id="comicGrid">
+
+    <div class="comic-panel">PANEL 1</div>
+
+    <div class="comic-panel">PANEL 2</div>
+
+    <div class="comic-panel">PANEL 3</div>
+
+    <div class="comic-panel">PANEL 4</div>
+
+</div>
