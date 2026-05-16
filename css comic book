@@ -1,0 +1,66 @@
+/* ======================================= */
+/* MENACE AI COMIC GENERATOR STYLES        */
+/* ======================================= */
+
+.comic-preview-grid{
+
+    display:grid;
+
+    grid-template-columns:1fr 1fr;
+
+    gap:15px;
+
+    width:100%;
+}
+
+.comic-panel{
+
+    background:#111;
+
+    border:2px solid #222;
+
+    min-height:220px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    font-family:'Anton',sans-serif;
+
+    letter-spacing:2px;
+
+    color:#777;
+
+    overflow:hidden;
+
+    position:relative;
+}
+
+.comic-panel img{
+
+    width:100%;
+
+    height:100%;
+
+    object-fit:cover;
+}
+
+/* COMIC STYLE OVERLAY */
+
+.comic-panel::after{
+
+    content:'';
+
+    position:absolute;
+
+    inset:0;
+
+    background:
+    linear-gradient(
+    rgba(255,0,0,0.05),
+    rgba(0,0,0,0.25));
+
+    pointer-events:none;
+}
