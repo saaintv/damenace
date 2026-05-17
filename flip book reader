@@ -1,0 +1,11 @@
+<div id="flipbook">
+
+    <div>
+        <img src="page1.jpg">
+    </div>
+
+    <div>
+        <img src="page2.jpg">
+    </div>
+
+</div>
