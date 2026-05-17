@@ -1,0 +1,13 @@
+const lorePrompt = `
+
+Remember this universe:
+
+Characters:
+${characters}
+
+Locations:
+${locations}
+
+Generate a new story arc
+that respects all existing lore.
+`;
