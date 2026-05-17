@@ -1,0 +1,417 @@
+
+MENACE 2 SOCIETY — COMPLETE WEBSITE BLUEPRINT
+==========================================================
+
+SECTION 1 — CORE VISION
+----------------------------------------------------------
+
+Platform Identity:
+AI-powered cinematic comic universe platform with:
+- fashion store
+- AI generation tools
+- motion comics
+- streamer ecosystem
+- creator platform
+- 3D immersive UI
+
+Main Features:
+- AI image generation
+- AI comic generation
+- AI lore engine
+- Motion comics
+- Clothing store
+- User accounts
+- Admin dashboard
+- Streamer integration
+- Mobile app
+- 3D homepage
+
+==========================================================
+
+SECTION 2 — FRONTEND STACK
+----------------------------------------------------------
+
+Frontend Framework:
+- Next.js
+- React
+
+Styling:
+- TailwindCSS
+- GSAP
+- Framer Motion
+
+3D:
+- Three.js
+- React Three Fiber
+- Spline
+
+Frontend Packages:
+npm install firebase axios gsap framer-motion three @react-three/fiber @react-three/drei react-icons
+
+Frontend Structure:
+
+frontend/
+│
+├── src/
+│   ├── app/
+│   ├── components/
+│   ├── services/
+│   ├── hooks/
+│   ├── styles/
+│   ├── layouts/
+│   ├── animations/
+│   └── ai/
+
+Core Components:
+- Hero.js
+- Navbar.js
+- Footer.js
+- AIStudio.js
+- ComicReader.js
+- MotionComic.js
+- UploadPanel.js
+- UserProfile.js
+- AdminDashboard.js
+- ProductGrid.js
+- CartSystem.js
+
+==========================================================
+
+SECTION 3 — BACKEND STACK
+----------------------------------------------------------
+
+Backend Framework:
+- Node.js
+- Express.js
+
+Backend Packages:
+npm install express cors dotenv firebase-admin stripe multer socket.io axios
+
+Backend Structure:
+
+backend/
+│
+├── routes/
+├── controllers/
+├── middleware/
+├── services/
+├── sockets/
+├── uploads/
+├── ai/
+└── server.js
+
+Backend Features:
+- AI API routes
+- Authentication verification
+- Product management
+- Comic management
+- Upload processing
+- Payment handling
+- Notification system
+- Socket realtime updates
+
+==========================================================
+
+SECTION 4 — FIREBASE SETUP
+----------------------------------------------------------
+
+Firebase Services:
+- Authentication
+- Firestore Database
+- Storage
+- Analytics
+- Cloud Messaging
+
+Collections:
+
+users/
+products/
+orders/
+comics/
+chapters/
+characters/
+lore/
+drops/
+notifications/
+messages/
+music/
+videos/
+aiGenerations/
+adminLogs/
+
+Authentication:
+- signup
+- login
+- password reset
+- email verification
+- owner role
+- customer role
+
+Storage:
+- image uploads
+- comic uploads
+- music uploads
+- video uploads
+
+==========================================================
+
+SECTION 5 — AI SYSTEMS
+----------------------------------------------------------
+
+AI Features:
+- AI image generation
+- AI comic generation
+- AI lore engine
+- AI dialogue generation
+- AI story arcs
+- AI character memory
+- AI video generation
+
+AI APIs:
+- Gemini API
+- Hugging Face
+- ElevenLabs
+- Pika
+- Runway
+
+AI Memory Engine:
+- persistent character memory
+- faction memory
+- event history
+- relationship tracking
+- timeline tracking
+
+==========================================================
+
+SECTION 6 — COMIC SYSTEM
+----------------------------------------------------------
+
+Comic Reader:
+- flipbook mode
+- motion comic mode
+- fullscreen mode
+- chapter system
+- episode system
+
+Comic Creator:
+- drag-and-drop panels
+- speech bubble editor
+- sound effects
+- timeline editor
+- scene builder
+- subtitle system
+
+Motion Comic Features:
+- camera pans
+- zoom effects
+- voice acting
+- transitions
+- music syncing
+
+==========================================================
+
+SECTION 7 — STORE SYSTEM
+----------------------------------------------------------
+
+Store Features:
+- product uploads
+- inventory
+- cart system
+- Stripe checkout
+- order tracking
+- shipping
+- discount codes
+- product categories
+
+Payment System:
+- Stripe
+- webhook handling
+- receipts
+- order confirmations
+
+==========================================================
+
+SECTION 8 — ADMIN DASHBOARD
+----------------------------------------------------------
+
+Owner Features:
+- upload products
+- manage comics
+- manage users
+- analytics
+- AI usage tracking
+- homepage editor
+- drop scheduler
+- upload music
+- upload videos
+- notifications
+
+==========================================================
+
+SECTION 9 — SOCIAL FEATURES
+----------------------------------------------------------
+
+Community Features:
+- likes
+- comments
+- followers
+- creator pages
+- activity feeds
+- notifications
+- user galleries
+
+Discovery Features:
+- search engine
+- trending page
+- featured comics
+- recommended creators
+
+==========================================================
+
+SECTION 10 — STREAMER FEATURES
+----------------------------------------------------------
+
+Twitch Features:
+- live stream status
+- stream schedule
+- chat integration
+- clip uploads
+- live notifications
+
+APIs:
+- Twitch Developer API
+
+==========================================================
+
+SECTION 11 — MOBILE APP
+----------------------------------------------------------
+
+Mobile Stack:
+- React Native
+- Expo
+
+Mobile Features:
+- offline reading
+- push notifications
+- swipe navigation
+- mobile AI tools
+- mobile uploads
+
+==========================================================
+
+SECTION 12 — SECURITY
+----------------------------------------------------------
+
+Security Features:
+- Firebase rules
+- protected admin routes
+- upload validation
+- session timeout
+- rate limiting
+- environment variables
+- backend authentication verification
+
+Required Files:
+.env
+.env.local
+
+Never expose:
+- Stripe secret keys
+- AI API keys
+- Firebase admin keys
+
+==========================================================
+
+SECTION 13 — PERFORMANCE
+----------------------------------------------------------
+
+Optimization:
+- lazy loading
+- image compression
+- code splitting
+- caching
+- CDN
+- video optimization
+
+==========================================================
+
+SECTION 14 — DEPLOYMENT
+----------------------------------------------------------
+
+Frontend Hosting:
+- Vercel
+
+Backend Hosting:
+- Render
+
+Version Control:
+- GitHub
+
+Deployment Flow:
+GitHub
+→ Vercel
+→ Production
+
+==========================================================
+
+SECTION 15 — IMPORTANT FILES
+----------------------------------------------------------
+
+Frontend Important Files:
+- page.js
+- layout.js
+- firebase.js
+- globals.css
+- AIStudio.js
+- ComicReader.js
+
+Backend Important Files:
+- server.js
+- aiRoutes.js
+- productRoutes.js
+- comicRoutes.js
+- authMiddleware.js
+
+==========================================================
+
+SECTION 16 — DEVELOPMENT ROADMAP
+----------------------------------------------------------
+
+PHASE 1
+- Firebase
+- Authentication
+- Database
+- Storage
+
+PHASE 2
+- AI generation
+- Comic reader
+- Store
+- Profiles
+
+PHASE 3
+- Motion comics
+- 3D homepage
+- Music system
+- Lore engine
+
+PHASE 4
+- Social platform
+- Creator ecosystem
+- Mobile app
+- Community systems
+
+==========================================================
+
+SECTION 17 — FINAL GOAL
+----------------------------------------------------------
+
+You are building:
+- AI entertainment platform
+- cinematic comic universe
+- creator ecosystem
+- fashion brand platform
+- streamer ecosystem
+- immersive storytelling platform
+
+==========================================================
