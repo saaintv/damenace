@@ -1,0 +1,401 @@
+============================================================
+AUTO INVENTORY + CATALOG UPLOAD SYSTEM
+MENACE 2 SOCIETY
+============================================================
+
+GOAL:
+Allow the owner/admin to:
+
+[ ] upload pictures directly from phone
+[ ] automatically create products
+[ ] automatically update inventory
+[ ] automatically generate catalog entries
+[ ] automatically create product cards
+[ ] automatically post drops/catalog updates
+
+============================================================
+SECTION 1 — FINAL USER FLOW
+============================================================
+
+OWNER FLOW:
+
+1 Upload image from phone
+        ↓
+2 AI scans image
+        ↓
+3 AI detects:
+    - clothing type
+    - colors
+    - style
+    - tags
+        ↓
+4 Product automatically created
+        ↓
+5 Product added to inventory
+        ↓
+6 Product appears in:
+    - store
+    - catalog
+    - homepage
+    - featured drop
+        ↓
+7 Notification automatically sent
+
+============================================================
+SECTION 2 — REQUIRED SYSTEMS
+============================================================
+
+YOU NEED:
+
+FRONTEND:
+- upload button
+- drag/drop uploader
+- admin dashboard
+- live inventory UI
+
+BACKEND:
+- image upload API
+- AI image analysis
+- Firebase storage
+- Firestore product creation
+
+AI:
+- image tagging
+- auto descriptions
+- auto category detection
+
+============================================================
+SECTION 3 — FIREBASE STORAGE STRUCTURE
+============================================================
+
+storage/
+
+products/
+catalog/
+drops/
+lookbook/
+thumbnails/
+
+============================================================
+SECTION 4 — FIRESTORE DATABASE STRUCTURE
+============================================================
+
+products/
+
+{
+  id:
+  title:
+  description:
+  category:
+  image:
+  price:
+  sizes:
+  inventory:
+  tags:
+  createdAt:
+  featured:
+  collection:
+}
+
+catalogIssues/
+
+{
+  id:
+  title:
+  coverImage:
+  releaseDate:
+  products:
+  featuredLooks:
+}
+
+============================================================
+SECTION 5 — OWNER PRODUCT UPLOAD UI
+============================================================
+
+OWNER DASHBOARD SHOULD INCLUDE:
+
+[UPLOAD PRODUCT]
+
+[DRAG & DROP IMAGE]
+
+[PRICE]
+
+[COLLECTION]
+
+[INVENTORY COUNT]
+
+[PUBLISH]
+
+============================================================
+SECTION 6 — IMAGE UPLOAD COMPONENT
+============================================================
+
+frontend/src/components/ProductUploader.js
+
+CODE:
+
+------------------------------------------------------------
+
+"use client";
+
+import { useState }
+from "react";
+
+import {
+  ref,
+  uploadBytes,
+  getDownloadURL
+}
+from "firebase/storage";
+
+import {
+  collection,
+  addDoc
+}
+from "firebase/firestore";
+
+import {
+  storage,
+  db
+}
+from "../services/firebase";
+
+export default function ProductUploader(){
+
+  const [loading,setLoading] =
+  useState(false);
+
+  async function uploadProduct(e){
+
+    try{
+
+      setLoading(true);
+
+      const file =
+      e.target.files[0];
+
+      if(!file) return;
+
+      /* ========================= */
+      /* UPLOAD IMAGE             */
+      /* ========================= */
+
+      const storageRef =
+      ref(
+
+        storage,
+
+        `products/${Date.now()}-${file.name}`
+      );
+
+      await uploadBytes(
+        storageRef,
+        file
+      );
+
+      const imageUrl =
+      await getDownloadURL(
+        storageRef
+      );
+
+      /* ========================= */
+      /* CREATE PRODUCT           */
+      /* ========================= */
+
+      await addDoc(
+
+        collection(db,"products"),
+
+        {
+
+          title:
+          "NEW MENACE DROP",
+
+          description:
+          "Auto generated product",
+
+          image:
+          imageUrl,
+
+          inventory:
+          10,
+
+          featured:
+          true,
+
+          category:
+          "streetwear",
+
+          createdAt:
+          new Date()
+        }
+      );
+
+      alert("Product uploaded");
+
+    }catch(error){
+
+      console.log(error);
+
+    }finally{
+
+      setLoading(false);
+    }
+  }
+
+  return(
+
+    <div>
+
+      <input
+
+      type="file"
+
+      accept="image/*"
+
+      onChange={uploadProduct}
+
+      />
+
+      {
+
+        loading ?
+
+        <p>Uploading...</p>
+
+        :
+
+        null
+      }
+
+    </div>
+  );
+}
+
+------------------------------------------------------------
+
+============================================================
+SECTION 7 — AI PRODUCT ANALYSIS
+============================================================
+
+ADD AI IMAGE ANALYSIS:
+
+AI SHOULD DETECT:
+- shirt
+- hoodie
+- patch
+- pants
+- colors
+- graphics
+- aesthetic
+
+USE:
+- Gemini Vision API
+- HuggingFace image classification
+
+AI AUTO GENERATES:
+- product name
+- description
+- tags
+- catalog placement
+
+============================================================
+SECTION 8 — AUTO CATALOG SYSTEM
+============================================================
+
+WHEN PRODUCTS ARE UPLOADED:
+
+SYSTEM AUTOMATICALLY:
+[ ] creates catalog entry
+[ ] updates collection
+[ ] updates homepage
+[ ] updates lookbook
+[ ] creates featured section
+[ ] sends notifications
+
+============================================================
+SECTION 9 — AUTO LOOKBOOK SYSTEM
+============================================================
+
+LOOKBOOK FEATURES:
+
+[ ] auto-generated galleries
+[ ] slideshow mode
+[ ] cinematic transitions
+[ ] mobile swipe mode
+[ ] fullscreen mode
+
+============================================================
+SECTION 10 — AUTO DROP SYSTEM
+============================================================
+
+OWNER CAN:
+
+[ ] set drop date
+[ ] upload teaser images
+[ ] upload motion trailers
+[ ] schedule countdowns
+[ ] feature collections
+
+COUNTDOWN AUTO-UPDATES:
+- homepage
+- mobile app
+- notifications
+- Discord webhook
+
+============================================================
+SECTION 11 — REALTIME INVENTORY SYSTEM
+============================================================
+
+INVENTORY SHOULD:
+
+[ ] update automatically
+[ ] reduce after purchase
+[ ] notify low stock
+[ ] mark sold out
+[ ] sync live across devices
+
+============================================================
+SECTION 12 — MOBILE ACCESSIBILITY
+============================================================
+
+OWNER MOBILE FEATURES:
+
+[ ] upload directly from phone
+[ ] camera support
+[ ] drag/drop uploads
+[ ] quick publish
+[ ] quick inventory edits
+[ ] live analytics
+
+============================================================
+SECTION 13 — OPTIONAL AI FEATURES
+============================================================
+
+AI CAN ALSO:
+
+[ ] suggest prices
+[ ] suggest tags
+[ ] generate promo captions
+[ ] create catalog covers
+[ ] generate product titles
+[ ] create teaser graphics
+
+============================================================
+SECTION 14 — FINAL RESULT
+============================================================
+
+AFTER THIS SYSTEM:
+
+YOU CAN:
+- upload products instantly
+- update inventory from phone
+- auto-create catalog drops
+- auto-update store
+- auto-update homepage
+- auto-generate lookbooks
+- auto-manage collections
+
+WITHOUT MANUALLY CODING PRODUCTS.
+
+============================================================
