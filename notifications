@@ -1,0 +1,195 @@
+/**
+ * server/notifications.js
+ * Notification service — DB queries, business logic
+ */
+
+const { v4: uuidv4 } = require('uuid');
+
+/* ── Mongoose Model ─────────────────────────────────────────── */
+let mongoose;
+try { mongoose = require('mongoose'); } catch (_) {}
+
+const NotificationSchema = mongoose?.Schema && new mongoose.Schema({
+  id:         { type: String, default: uuidv4, index: true },
+  userId:     { type: String, required: true, index: true },  // 'all' = broadcast
+  title:      { type: String, required: true, maxlength: 120 },
+  message:    { type: String, required: true, maxlength: 500 },
+  type:       {
+    type: String,
+    enum: ['new_drop','order_update','payment_success','restock_alert','stock_warning','shipping_update','admin_broadcast'],
+    default: 'admin_broadcast'
+  },
+  timestamp:  { type: Date, default: Date.now },
+  read:       { type: Boolean, default: false, index: true },
+  imageUrl:   { type: String, default: '' },
+  actionUrl:  { type: String, default: '' },
+  priority:   { type: String, enum: ['low','normal','high','critical'], default: 'normal' },
+  badge:      { type: String, default: '' },
+  metadata:   { type: mongoose?.Schema?.Types?.Mixed, default: {} },
+  deletedAt:  { type: Date, default: null }
+}, {
+  timestamps: true,
+  toJSON:     { virtuals: true },
+  toObject:   { virtuals: true }
+});
+
+if (NotificationSchema) {
+  NotificationSchema.index({ userId: 1, read: 1, timestamp: -1 });
+  NotificationSchema.index({ timestamp: -1 });
+}
+
+const NotificationModel = mongoose?.model && mongoose.model('Notification', NotificationSchema);
+
+/* ── In-memory fallback store ───────────────────────────────── */
+const memStore = [];
+
+function memSave(data) {
+  memStore.unshift({ ...data, _id: uuidv4(), createdAt: new Date() });
+  if (memStore.length > 1000) memStore.pop();
+  return data;
+}
+
+function memQuery(userId, options = {}) {
+  const { limit = 50, skip = 0, unreadOnly = false } = options;
+  return memStore
+    .filter(n => (n.userId === userId || n.userId === 'all') && !n.deletedAt)
+    .filter(n => !unreadOnly || !n.read)
+    .slice(skip, skip + limit);
+}
+
+/* ── Service Methods ────────────────────────────────────────── */
+async function saveNotification(data) {
+  const notif = {
+    id:        data.id || uuidv4(),
+    userId:    data.userId,
+    title:     data.title,
+    message:   data.message,
+    type:      data.type       || 'admin_broadcast',
+    timestamp: data.timestamp  || new Date().toISOString(),
+    read:      false,
+    imageUrl:  data.imageUrl   || '',
+    actionUrl: data.actionUrl  || '',
+    priority:  data.priority   || 'normal',
+    badge:     data.badge      || '',
+    metadata:  data.metadata   || {}
+  };
+
+  if (NotificationModel) {
+    try { return await NotificationModel.create(notif); } catch (e) { console.warn('[DB] Save failed:', e.message); }
+  }
+
+  return memSave(notif);
+}
+
+async function getNotifications(userId, options = {}) {
+  if (NotificationModel) {
+    try {
+      const { limit = 50, skip = 0, unreadOnly = false } = options;
+      const query = {
+        $or: [{ userId }, { userId: 'all' }],
+        deletedAt: null
+      };
+      if (unreadOnly) query.read = false;
+      return await NotificationModel.find(query)
+        .sort({ timestamp: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean();
+    } catch (e) { console.warn('[DB] Query failed:', e.message); }
+  }
+  return memQuery(userId, options);
+}
+
+async function getUnreadCount(userId) {
+  if (NotificationModel) {
+    try {
+      return await NotificationModel.countDocuments({
+        $or: [{ userId }, { userId: 'all' }],
+        read: false,
+        deletedAt: null
+      });
+    } catch (e) {}
+  }
+  return memStore.filter(n => (n.userId === userId || n.userId === 'all') && !n.read && !n.deletedAt).length;
+}
+
+async function markAsRead(notificationId, userId) {
+  if (NotificationModel) {
+    try {
+      return await NotificationModel.updateOne(
+        { id: notificationId, $or: [{ userId }, { userId: 'all' }] },
+        { $set: { read: true } }
+      );
+    } catch (e) {}
+  }
+  const n = memStore.find(x => x.id === notificationId);
+  if (n) n.read = true;
+}
+
+async function markAllAsRead(userId) {
+  if (NotificationModel) {
+    try {
+      return await NotificationModel.updateMany(
+        { $or: [{ userId }, { userId: 'all' }], read: false },
+        { $set: { read: true } }
+      );
+    } catch (e) {}
+  }
+  memStore.filter(n => n.userId === userId || n.userId === 'all').forEach(n => n.read = true);
+}
+
+async function deleteOne(notificationId, userId) {
+  if (NotificationModel) {
+    try {
+      return await NotificationModel.updateOne(
+        { id: notificationId, $or: [{ userId }, { userId: 'all' }] },
+        { $set: { deletedAt: new Date() } }
+      );
+    } catch (e) {}
+  }
+  const i = memStore.findIndex(n => n.id === notificationId);
+  if (i > -1) memStore[i].deletedAt = new Date();
+}
+
+async function clearAll(userId) {
+  if (NotificationModel) {
+    try {
+      return await NotificationModel.updateMany(
+        { userId },
+        { $set: { deletedAt: new Date() } }
+      );
+    } catch (e) {}
+  }
+  memStore.filter(n => n.userId === userId).forEach(n => n.deletedAt = new Date());
+}
+
+async function getAnalytics() {
+  if (NotificationModel) {
+    try {
+      const [total, unread, byType] = await Promise.all([
+        NotificationModel.countDocuments({ deletedAt: null }),
+        NotificationModel.countDocuments({ read: false, deletedAt: null }),
+        NotificationModel.aggregate([
+          { $match: { deletedAt: null } },
+          { $group: { _id: '$type', count: { $sum: 1 } } }
+        ])
+      ]);
+      return { total, unread, byType };
+    } catch (e) {}
+  }
+  const byType = {};
+  memStore.filter(n => !n.deletedAt).forEach(n => { byType[n.type] = (byType[n.type] || 0) + 1; });
+  return { total: memStore.length, unread: memStore.filter(n => !n.read && !n.deletedAt).length, byType };
+}
+
+module.exports = {
+  saveNotification,
+  getNotifications,
+  getUnreadCount,
+  markAsRead,
+  markAllAsRead,
+  deleteOne,
+  clearAll,
+  getAnalytics,
+  NotificationModel
+};
