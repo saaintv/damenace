@@ -1,0 +1,488 @@
+============================================================
+CONNECT FIREBASE TO MENACE 2 SOCIETY WEBSITE
+============================================================
+
+GOAL:
+Connect:
+[ ] Authentication
+[ ] Firestore Database
+[ ] Storage
+[ ] Hosting
+[ ] Realtime Systems
+
+============================================================
+STEP 1 — CREATE FIREBASE PROJECT
+============================================================
+
+1 Go to:
+
+https://firebase.google.com
+
+2 Click:
+GO TO CONSOLE
+
+3 Click:
+CREATE PROJECT
+
+4 PROJECT NAME:
+
+Menace2Society
+
+5 Continue setup.
+
+============================================================
+STEP 2 — REGISTER WEB APP
+============================================================
+
+Inside Firebase:
+
+1 Click:
+Add App
+
+2 Select:
+WEB ICON </>
+
+3 APP NAME:
+
+Menace2SocietyWeb
+
+4 Enable Hosting:
+YES
+
+5 Click:
+Register App
+
+============================================================
+STEP 3 — COPY FIREBASE CONFIG
+============================================================
+
+Firebase gives you:
+
+------------------------------------------------------------
+
+const firebaseConfig = {
+
+  apiKey: "",
+
+  authDomain: "",
+
+  projectId: "",
+
+  storageBucket: "",
+
+  messagingSenderId: "",
+
+  appId: ""
+
+};
+
+------------------------------------------------------------
+
+SAVE THIS.
+
+============================================================
+STEP 4 — ADD FIREBASE SDK
+============================================================
+
+INSIDE:
+index.html
+
+ADD BEFORE:
+</body>
+
+------------------------------------------------------------
+
+<script type="module">
+
+import { initializeApp }
+
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import {
+
+  getAuth
+
+}
+
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+import {
+
+  getFirestore
+
+}
+
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+import {
+
+  getStorage
+
+}
+
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
+const firebaseConfig = {
+
+  apiKey: "YOUR_API_KEY",
+
+  authDomain:
+  "YOUR_AUTH_DOMAIN",
+
+  projectId:
+  "YOUR_PROJECT_ID",
+
+  storageBucket:
+  "YOUR_STORAGE_BUCKET",
+
+  messagingSenderId:
+  "YOUR_SENDER_ID",
+
+  appId:
+  "YOUR_APP_ID"
+
+};
+
+const app =
+initializeApp(firebaseConfig);
+
+const auth =
+getAuth(app);
+
+const db =
+getFirestore(app);
+
+const storage =
+getStorage(app);
+
+console.log(
+  "Firebase Connected"
+);
+
+</script>
+
+------------------------------------------------------------
+
+============================================================
+STEP 5 — ENABLE AUTHENTICATION
+============================================================
+
+Inside Firebase Console:
+
+1 Click:
+Authentication
+
+2 Click:
+Get Started
+
+3 Enable:
+
+[ ] Email/Password
+[ ] Google Login
+
+============================================================
+STEP 6 — ADD SIGNUP SYSTEM
+============================================================
+
+ADD TO:
+script.js
+
+------------------------------------------------------------
+
+import {
+
+  createUserWithEmailAndPassword
+
+}
+
+from
+"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+function signUp(){
+
+  const email =
+  document.getElementById("email")
+  .value;
+
+  const password =
+  document.getElementById("password")
+  .value;
+
+  createUserWithEmailAndPassword(
+
+    auth,
+    email,
+    password
+
+  )
+
+  .then((userCredential)=>{
+
+    alert("Account Created");
+
+  })
+
+  .catch((error)=>{
+
+    alert(error.message);
+
+  });
+}
+
+------------------------------------------------------------
+
+============================================================
+STEP 7 — ADD LOGIN SYSTEM
+============================================================
+
+------------------------------------------------------------
+
+import {
+
+  signInWithEmailAndPassword
+
+}
+
+from
+"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+function login(){
+
+  const email =
+  document.getElementById("email")
+  .value;
+
+  const password =
+  document.getElementById("password")
+  .value;
+
+  signInWithEmailAndPassword(
+
+    auth,
+    email,
+    password
+
+  )
+
+  .then(()=>{
+
+    alert("Logged In");
+
+  })
+
+  .catch((error)=>{
+
+    alert(error.message);
+
+  });
+}
+
+------------------------------------------------------------
+
+============================================================
+STEP 8 — CONNECT FIRESTORE DATABASE
+============================================================
+
+CREATE DATABASE:
+
+1 Firestore Database
+2 Create Database
+3 Start in test mode
+
+============================================================
+SAVE DATA
+============================================================
+
+------------------------------------------------------------
+
+import {
+
+  collection,
+  addDoc
+
+}
+
+from
+"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+async function saveProduct(){
+
+  await addDoc(
+
+    collection(db,"products"),
+
+    {
+
+      title:
+      "Most Wanted Hoodie",
+
+      price:
+      75
+
+    }
+  );
+
+  alert("Saved");
+
+}
+
+------------------------------------------------------------
+
+============================================================
+STEP 9 — CONNECT STORAGE
+============================================================
+
+ENABLE STORAGE:
+
+1 Storage
+2 Get Started
+
+============================================================
+UPLOAD IMAGES
+============================================================
+
+------------------------------------------------------------
+
+import {
+
+  ref,
+  uploadBytes
+
+}
+
+from
+"https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
+async function uploadImage(file){
+
+  const storageRef =
+  ref(
+
+    storage,
+
+    "products/" + file.name
+
+  );
+
+  await uploadBytes(
+
+    storageRef,
+    file
+
+  );
+
+  alert("Uploaded");
+
+}
+
+------------------------------------------------------------
+
+============================================================
+STEP 10 — ADD OWNER ADMIN SYSTEM
+============================================================
+
+CREATE:
+
+users collection
+
+------------------------------------------------------------
+
+users/
+
+{
+
+  uid:
+  role:
+
+}
+
+------------------------------------------------------------
+
+ROLES:
+- owner
+- admin
+- customer
+
+============================================================
+STEP 11 — FIREBASE SECURITY RULES
+============================================================
+
+FIRESTORE RULES:
+
+------------------------------------------------------------
+
+rules_version = '2';
+
+service cloud.firestore {
+
+match /databases/{database}/documents {
+
+match /{document=**} {
+
+allow read: if true;
+
+allow write:
+if request.auth != null;
+
+}
+
+}
+
+}
+
+------------------------------------------------------------
+
+============================================================
+STEP 12 — DEPLOY WEBSITE
+============================================================
+
+INSTALL FIREBASE CLI:
+
+------------------------------------------------------------
+
+npm install -g firebase-tools
+
+------------------------------------------------------------
+
+LOGIN:
+
+------------------------------------------------------------
+
+firebase login
+
+------------------------------------------------------------
+
+INIT:
+
+------------------------------------------------------------
+
+firebase init
+
+------------------------------------------------------------
+
+DEPLOY:
+
+------------------------------------------------------------
+
+firebase deploy
+
+------------------------------------------------------------
+
+============================================================
+FINAL RESULT
+============================================================
+
+AFTER THIS:
+
+YOUR WEBSITE WILL HAVE:
+
+[ ] Firebase Authentication
+[ ] User Accounts
+[ ] Firestore Database
+[ ] Image Uploads
+[ ] Storage
+[ ] Admin Roles
+[ ] Realtime Features
+[ ] Cloud Hosting
+
+============================================================
