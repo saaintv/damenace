@@ -1,0 +1,607 @@
+<!-- ===================================================== -->
+<!-- MENACE AI STORY ENGINE                                -->
+<!-- FREE CHARACTER + LORE + COMIC SYSTEM                  -->
+<!-- ===================================================== -->
+
+<section class="story-engine glass fade-up">
+
+    <h1>MENACE AI STORY ENGINE</h1>
+
+    <p class="engine-subtitle">
+        Build characters, lore, dialogue, comic arcs,
+        scene ideas, and evolving universes.
+    </p>
+
+    <!-- ====================================== -->
+    <!-- CHARACTER MEMORY                       -->
+    <!-- ====================================== -->
+
+    <div class="engine-grid">
+
+        <div class="engine-panel">
+
+            <h2>CHARACTER MEMORY</h2>
+
+            <input
+            id="characterName"
+            placeholder="Character Name">
+
+            <textarea
+            id="characterDescription"
+            placeholder="Describe personality, powers, appearance, trauma, goals...">
+            </textarea>
+
+            <button onclick="saveCharacter()">
+
+                SAVE CHARACTER
+
+            </button>
+
+            <div id="characterList"></div>
+
+        </div>
+
+        <!-- ====================================== -->
+        <!-- COMIC ARC GENERATOR                    -->
+        <!-- ====================================== -->
+
+        <div class="engine-panel">
+
+            <h2>COMIC ARC GENERATOR</h2>
+
+            <textarea
+            id="arcPrompt"
+            placeholder="Describe the story concept...">
+            </textarea>
+
+            <button onclick="generateArc()">
+
+                GENERATE ARC
+
+            </button>
+
+            <div
+            class="output-box"
+            id="arcOutput">
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ====================================== -->
+    <!-- DIALOGUE + SCENES                      -->
+    <!-- ====================================== -->
+
+    <div class="engine-grid">
+
+        <!-- DIALOGUE -->
+
+        <div class="engine-panel">
+
+            <h2>DIALOGUE GENERATOR</h2>
+
+            <textarea
+            id="dialoguePrompt"
+            placeholder="Describe the scene and characters...">
+            </textarea>
+
+            <button onclick="generateDialogue()">
+
+                GENERATE DIALOGUE
+
+            </button>
+
+            <div
+            class="output-box"
+            id="dialogueOutput">
+
+            </div>
+
+        </div>
+
+        <!-- SCENE IDEAS -->
+
+        <div class="engine-panel">
+
+            <h2>SCENE IDEA GENERATOR</h2>
+
+            <textarea
+            id="scenePrompt"
+            placeholder="Describe the mood or conflict...">
+            </textarea>
+
+            <button onclick="generateSceneIdeas()">
+
+                GENERATE SCENES
+
+            </button>
+
+            <div
+            class="output-box"
+            id="sceneOutput">
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ====================================== -->
+    <!-- AUTO LORE BUILDER                      -->
+    <!-- ====================================== -->
+
+    <div class="engine-panel lore-panel">
+
+        <h2>LORE ENGINE</h2>
+
+        <textarea
+        id="lorePrompt"
+        placeholder="Describe your world, factions, dimensions, history...">
+        </textarea>
+
+        <button onclick="generateLore()">
+
+            BUILD LORE
+
+        </button>
+
+        <div
+        class="output-box"
+        id="loreOutput">
+
+        </div>
+
+    </div>
+
+</section>
+
+<!-- ===================================================== -->
+<!-- STYLES                                                 -->
+<!-- ===================================================== -->
+
+<style>
+
+.story-engine{
+
+    padding:120px 8%;
+}
+
+.engine-subtitle{
+
+    text-align:center;
+
+    color:#8f8f8f;
+
+    margin-bottom:60px;
+}
+
+.engine-grid{
+
+    display:grid;
+
+    grid-template-columns:1fr 1fr;
+
+    gap:30px;
+
+    margin-bottom:30px;
+}
+
+.engine-panel{
+
+    background:#111;
+
+    border:1px solid #222;
+
+    padding:30px;
+
+    border-radius:20px;
+}
+
+.engine-panel h2{
+
+    margin-bottom:20px;
+
+    font-family:'Anton',sans-serif;
+
+    letter-spacing:2px;
+}
+
+.engine-panel input,
+.engine-panel textarea{
+
+    width:100%;
+
+    background:#090909;
+
+    border:1px solid #222;
+
+    color:white;
+
+    padding:15px;
+
+    margin-bottom:20px;
+
+    resize:none;
+}
+
+.engine-panel textarea{
+
+    min-height:140px;
+}
+
+.engine-panel button{
+
+    width:100%;
+
+    padding:16px;
+
+    background:#ff1e1e;
+
+    color:white;
+
+    border:none;
+
+    cursor:pointer;
+
+    font-weight:bold;
+
+    letter-spacing:2px;
+
+    transition:0.3s;
+}
+
+.engine-panel button:hover{
+
+    background:#ff3d3d;
+}
+
+.output-box{
+
+    margin-top:25px;
+
+    background:#0b0b0b;
+
+    border:1px solid #222;
+
+    padding:20px;
+
+    border-radius:15px;
+
+    min-height:120px;
+
+    line-height:1.7;
+
+    color:#ccc;
+}
+
+.character-card{
+
+    background:#151515;
+
+    padding:15px;
+
+    border-radius:12px;
+
+    margin-top:15px;
+}
+
+.lore-panel{
+
+    margin-top:30px;
+}
+
+@media(max-width:1000px){
+
+    .engine-grid{
+
+        grid-template-columns:1fr;
+    }
+}
+
+</style>
+
+<!-- ===================================================== -->
+<!-- JAVASCRIPT                                             -->
+<!-- ===================================================== -->
+
+<script>
+
+/* ===================================================== */
+/* CHARACTER MEMORY SYSTEM                               */
+/* ===================================================== */
+
+let characterDatabase = [];
+
+/* SAVE CHARACTER */
+
+function saveCharacter(){
+
+    const name =
+    document.getElementById(
+    "characterName").value;
+
+    const description =
+    document.getElementById(
+    "characterDescription").value;
+
+    if(!name || !description){
+
+        alert("Fill out character info.");
+
+        return;
+    }
+
+    const character = {
+
+        name,
+        description
+    };
+
+    characterDatabase.push(character);
+
+    localStorage.setItem(
+    "menaceCharacters",
+    JSON.stringify(characterDatabase)
+    );
+
+    renderCharacters();
+}
+
+/* LOAD CHARACTERS */
+
+function loadCharacters(){
+
+    const saved =
+    localStorage.getItem(
+    "menaceCharacters"
+    );
+
+    if(saved){
+
+        characterDatabase =
+        JSON.parse(saved);
+
+        renderCharacters();
+    }
+}
+
+/* DISPLAY */
+
+function renderCharacters(){
+
+    const container =
+    document.getElementById(
+    "characterList"
+    );
+
+    container.innerHTML = "";
+
+    characterDatabase.forEach(character=>{
+
+        container.innerHTML += `
+
+            <div class="character-card">
+
+                <h3>
+                    ${character.name}
+                </h3>
+
+                <p>
+                    ${character.description}
+                </p>
+
+            </div>
+        `;
+    });
+}
+
+loadCharacters();
+
+/* ===================================================== */
+/* FREE AI TEXT ENGINE                                   */
+/* ===================================================== */
+
+/*
+USING GEMINI FREE API
+https://aistudio.google.com
+*/
+
+const API_KEY =
+"YOUR_FREE_GEMINI_API_KEY";
+
+/* ===================================================== */
+/* GENERIC AI FUNCTION                                   */
+/* ===================================================== */
+
+async function askAI(prompt){
+
+    const response = await fetch(
+
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`,
+
+    {
+
+        method:"POST",
+
+        headers:{
+            "Content-Type":"application/json"
+        },
+
+        body:JSON.stringify({
+
+            contents:[{
+
+                parts:[{
+
+                    text:prompt
+                }]
+            }]
+        })
+    });
+
+    const data =
+    await response.json();
+
+    return data
+    .candidates[0]
+    .content
+    .parts[0]
+    .text;
+}
+
+/* ===================================================== */
+/* COMIC ARC GENERATOR                                   */
+/* ===================================================== */
+
+async function generateArc(){
+
+    const prompt =
+    document.getElementById(
+    "arcPrompt").value;
+
+    const output =
+    document.getElementById(
+    "arcOutput");
+
+    output.innerHTML =
+    "Generating comic arc...";
+
+    const aiPrompt = `
+
+    Create a dark cinematic comic arc.
+
+    Story idea:
+    ${prompt}
+
+    Include:
+    - beginning
+    - rising conflict
+    - climax
+    - ending
+    - emotional themes
+    - major twist
+    `;
+
+    const result =
+    await askAI(aiPrompt);
+
+    output.innerHTML = result;
+}
+
+/* ===================================================== */
+/* DIALOGUE GENERATOR                                    */
+/* ===================================================== */
+
+async function generateDialogue(){
+
+    const prompt =
+    document.getElementById(
+    "dialoguePrompt").value;
+
+    const output =
+    document.getElementById(
+    "dialogueOutput");
+
+    output.innerHTML =
+    "Generating dialogue...";
+
+    const aiPrompt = `
+
+    Create dramatic comic dialogue.
+
+    Scene:
+    ${prompt}
+
+    Include:
+    - tension
+    - emotion
+    - cinematic energy
+    - realistic speech
+    `;
+
+    const result =
+    await askAI(aiPrompt);
+
+    output.innerHTML = result;
+}
+
+/* ===================================================== */
+/* SCENE IDEA GENERATOR                                  */
+/* ===================================================== */
+
+async function generateSceneIdeas(){
+
+    const prompt =
+    document.getElementById(
+    "scenePrompt").value;
+
+    const output =
+    document.getElementById(
+    "sceneOutput");
+
+    output.innerHTML =
+    "Generating scenes...";
+
+    const aiPrompt = `
+
+    Generate 5 comic scene ideas.
+
+    Theme:
+    ${prompt}
+
+    Include:
+    - camera angles
+    - atmosphere
+    - lighting
+    - emotional tension
+    `;
+
+    const result =
+    await askAI(aiPrompt);
+
+    output.innerHTML = result;
+}
+
+/* ===================================================== */
+/* LORE BUILDER                                           */
+/* ===================================================== */
+
+async function generateLore(){
+
+    const prompt =
+    document.getElementById(
+    "lorePrompt").value;
+
+    const output =
+    document.getElementById(
+    "loreOutput");
+
+    output.innerHTML =
+    "Building lore...";
+
+    const aiPrompt = `
+
+    Create deep fictional lore.
+
+    Universe:
+    ${prompt}
+
+    Include:
+    - factions
+    - history
+    - legends
+    - symbolism
+    - hidden mysteries
+    - locations
+    - mythology
+    `;
+
+    const result =
+    await askAI(aiPrompt);
+
+    output.innerHTML = result;
+}
+
+</script>
