@@ -1,0 +1,484 @@
+============================================================
+MENACE 2 SOCIETY
+PHASE 1 — CORE INFRASTRUCTURE SYSTEMS
+( FIRST HALF OF FINAL TASKS )
+============================================================
+
+GOAL:
+Build the foundational systems required before scaling.
+
+THIS PHASE FOCUSES ON:
+
+1 DevOps + Infrastructure
+2 Backend Architecture
+3 Cost Management
+4 AI Orchestration
+5 Search + Discovery
+6 Reward Loop Systems
+7 Content Foundation
+
+============================================================
+SECTION 1 — DEVOPS + INFRASTRUCTURE
+============================================================
+
+GOAL:
+Create a professional deployment environment.
+
+============================================================
+YOU NEED
+============================================================
+
+[ ] GitHub repository
+[ ] automatic deployment
+[ ] staging environment
+[ ] production environment
+[ ] rollback support
+[ ] uptime monitoring
+[ ] environment variables
+[ ] automated backups
+
+============================================================
+RECOMMENDED STACK
+============================================================
+
+Frontend:
+- Next.js
+- Tailwind
+- Framer Motion
+
+Backend:
+- Firebase
+- Cloud Functions
+
+Hosting:
+- Vercel
+- Firebase Hosting
+
+Monitoring:
+- UptimeRobot
+- Sentry
+
+============================================================
+PROJECT STRUCTURE
+============================================================
+
+/frontend
+/backend
+/functions
+/public
+/components
+/pages
+/services
+/lib
+/styles
+/database
+/uploads
+
+============================================================
+ENVIRONMENT VARIABLES
+============================================================
+
+.env.local
+
+NEXT_PUBLIC_FIREBASE_API_KEY=
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+NEXT_PUBLIC_FIREBASE_APP_ID=
+
+STRIPE_SECRET_KEY=
+OPENAI_API_KEY=
+GEMINI_API_KEY=
+
+============================================================
+GITHUB ACTIONS DEPLOYMENT
+============================================================
+
+.github/workflows/deploy.yml
+
+------------------------------------------------------------
+
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+
+  build-and-deploy:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - uses: actions/checkout@v3
+
+      - name: Install
+
+        run: npm install
+
+      - name: Build
+
+        run: npm run build
+
+      - name: Deploy
+
+        run: npm run deploy
+
+------------------------------------------------------------
+
+============================================================
+SECTION 2 — BACKEND ARCHITECTURE
+============================================================
+
+GOAL:
+Separate systems cleanly.
+
+============================================================
+BACKEND STRUCTURE
+============================================================
+
+backend/
+
+api/
+auth/
+ai/
+comics/
+store/
+notifications/
+uploads/
+analytics/
+moderation/
+
+============================================================
+API ROUTES
+============================================================
+
+/api/auth
+/api/upload
+/api/generate
+/api/products
+/api/comics
+/api/orders
+/api/search
+/api/notifications
+
+============================================================
+BACKGROUND JOBS
+============================================================
+
+USE:
+Firebase Functions
+
+BACKGROUND TASKS:
+[ ] thumbnail generation
+[ ] image compression
+[ ] AI queue processing
+[ ] notification sending
+[ ] inventory syncing
+
+============================================================
+QUEUE SYSTEM
+============================================================
+
+generationQueue/
+
+{
+  userId:
+  type:
+  status:
+  prompt:
+  createdAt:
+}
+
+============================================================
+SECTION 3 — COST MANAGEMENT
+============================================================
+
+GOAL:
+Prevent AI abuse and server overload.
+
+============================================================
+CREDIT SYSTEM
+============================================================
+
+FREE USERS:
+- 10 AI generations daily
+
+PREMIUM USERS:
+- unlimited generations
+
+============================================================
+USER CREDIT STRUCTURE
+============================================================
+
+users/
+
+{
+  credits:
+  subscription:
+  generationsToday:
+  resetTime:
+}
+
+============================================================
+GENERATION LIMIT LOGIC
+============================================================
+
+IF:
+generationsToday >= limit
+
+THEN:
+disable generation button
+
+============================================================
+QUEUE LIMITING
+============================================================
+
+PREVENT:
+- spam generations
+- AI abuse
+- storage overload
+- DDOS-style AI requests
+
+============================================================
+SECTION 4 — AI ORCHESTRATION
+============================================================
+
+GOAL:
+Connect all AI systems together.
+
+============================================================
+AI SYSTEMS
+============================================================
+
+[ ] image generation
+[ ] comic generation
+[ ] dialogue generation
+[ ] lore generation
+[ ] character memory
+[ ] scene generation
+
+============================================================
+AI MEMORY ENGINE
+============================================================
+
+memory/
+
+{
+  character:
+  relationships:
+  factions:
+  locations:
+  history:
+  personality:
+}
+
+============================================================
+LORE ENGINE
+============================================================
+
+AI REMEMBERS:
+- previous events
+- world history
+- character relationships
+- districts
+- rivalries
+
+============================================================
+MASTER AI FLOW
+============================================================
+
+USER PROMPT
+        ↓
+LORE ENGINE
+        ↓
+CHARACTER MEMORY
+        ↓
+STYLE ENGINE
+        ↓
+IMAGE GENERATOR
+        ↓
+COMIC ENGINE
+
+============================================================
+SECTION 5 — SEARCH + DISCOVERY
+============================================================
+
+GOAL:
+Help users discover content.
+
+============================================================
+SEARCH FEATURES
+============================================================
+
+[ ] comic search
+[ ] creator search
+[ ] product search
+[ ] lore search
+[ ] AI preset search
+
+============================================================
+SEARCH ENGINE
+============================================================
+
+USE:
+- Algolia
+OR
+- Typesense
+
+============================================================
+TRENDING SYSTEM
+============================================================
+
+TRACK:
+- most viewed comics
+- trending creators
+- popular products
+- viral generations
+
+============================================================
+DISCOVERY PAGE
+============================================================
+
+SECTIONS:
+- trending now
+- recommended creators
+- featured drops
+- newest comics
+- AI showcases
+
+============================================================
+SECTION 6 — REWARD LOOP SYSTEM
+============================================================
+
+GOAL:
+Increase retention.
+
+============================================================
+REWARD FEATURES
+============================================================
+
+[ ] XP system
+[ ] creator levels
+[ ] achievements
+[ ] collectible badges
+[ ] unlockables
+[ ] streaks
+
+============================================================
+XP SYSTEM
+============================================================
+
+USERS EARN XP FOR:
+- uploads
+- purchases
+- comments
+- daily logins
+- comic reading
+
+============================================================
+BADGES
+============================================================
+
+EXAMPLES:
+- Founder
+- Top Creator
+- Lore Master
+- Most Wanted
+- Menace Elite
+
+============================================================
+SECTION 7 — CONTENT FOUNDATION
+============================================================
+
+GOAL:
+Prepare real platform content.
+
+============================================================
+YOU NEED
+============================================================
+
+[ ] comic issue #1
+[ ] character bios
+[ ] faction system
+[ ] world map
+[ ] district lore
+[ ] creator showcases
+[ ] music playlist
+[ ] cinematic trailer
+
+============================================================
+CONTENT STRUCTURE
+============================================================
+
+content/
+
+comics/
+characters/
+districts/
+factions/
+music/
+trailers/
+drops/
+
+============================================================
+HOMEPAGE CONTENT
+============================================================
+
+SHOW:
+- featured comic
+- newest drop
+- trending creator
+- AI showcase
+- live countdown
+
+============================================================
+SECTION 8 — FINAL POLISH
+============================================================
+
+FINAL TOUCHES:
+[ ] smooth transitions
+[ ] cinematic loading screen
+[ ] optimized mobile UI
+[ ] animated buttons
+[ ] particle effects
+[ ] fog overlays
+[ ] comic-inspired lighting
+
+============================================================
+SECTION 9 — DEBUGGING
+============================================================
+
+FIX:
+[ ] broken routes
+[ ] upload failures
+[ ] loading freezes
+[ ] slow animations
+[ ] mobile bugs
+[ ] payment errors
+[ ] Firebase permission errors
+
+============================================================
+SECTION 10 — FINAL RESULT
+============================================================
+
+AFTER THIS PHASE:
+
+THE PLATFORM BECOMES:
+
+[ ] scalable
+[ ] stable
+[ ] immersive
+[ ] optimized
+[ ] AI-powered
+[ ] creator-ready
+[ ] launch-ready
+
+THIS IS:
+the real foundation layer.
+
+============================================================
