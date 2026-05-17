@@ -1,0 +1,12 @@
+await db.collection(
+"characters"
+).add({
+
+    name:"DaMenace",
+
+    faction:"Menace Mafia",
+
+    enemies:["Kain"],
+
+    lore:"Leader of..."
+});
