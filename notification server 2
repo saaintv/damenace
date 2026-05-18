@@ -1,0 +1,82 @@
+// ================================================================
+// MENACE 2 SOCIETY — Socket Event Registry
+// server/socket.js
+// ================================================================
+
+/**
+ * All Socket.IO event names used across the system.
+ * Import this file on both server and client to keep events in sync.
+ */
+const EVENTS = {
+  // Server → Client
+  NOTIFICATION_NEW:       'notification:new',
+  NOTIFICATION_HISTORY:   'notification:history',
+  NOTIFICATION_UPDATED:   'notification:updated',
+  NOTIFICATION_DELETED:   'notification:deleted',
+  NOTIFICATION_CLEARED:   'notification:cleared',
+  NOTIFICATION_ALL_READ:  'notification:all_read',
+  PRESENCE_UPDATE:        'presence:update',
+  ORDER_PROGRESS:         'order:progress',
+  BANNER_ANNOUNCEMENT:    'banner:announcement',
+  ACTIVITY_TYPING:        'activity:typing',
+  ERROR:                  'error',
+
+  // Client → Server (User)
+  NOTIF_READ:             'notification:read',
+  NOTIF_READ_ALL:         'notification:read_all',
+  NOTIF_DELETE:           'notification:delete',
+  NOTIF_CLEAR_ALL:        'notification:clear_all',
+  PUSH_SUBSCRIBE:         'push:subscribe',
+  TYPING:                 'activity:typing',
+
+  // Client → Server (Admin)
+  ADMIN_BROADCAST:        'admin:broadcast',
+  ADMIN_SEND_USER:        'admin:send_user',
+  ADMIN_SCHEDULE:         'admin:schedule',
+  ADMIN_GET_ANALYTICS:    'admin:get_analytics',
+  ADMIN_GET_USERS:        'admin:get_users',
+  ADMIN_GET_SCHEDULED:    'admin:get_scheduled',
+  ADMIN_CANCEL_JOB:       'admin:cancel_job',
+
+  // Server → Admin
+  ADMIN_ANALYTICS:        'admin:analytics',
+  ADMIN_USERS:            'admin:users',
+  ADMIN_SCHEDULED_JOBS:   'admin:scheduled_jobs',
+  ADMIN_JOB_SCHEDULED:    'admin:job_scheduled',
+  ADMIN_JOB_COMPLETE:     'admin:job_complete',
+  ADMIN_JOB_CANCELLED:    'admin:job_cancelled',
+  PUSH_SUBSCRIBED:        'push:subscribed',
+
+  // Drop Events
+  NEW_DROP:               'event:new_drop',
+  ORDER_UPDATE:           'event:order_update',
+  PAYMENT_SUCCESS:        'event:payment_success',
+  RESTOCK_ALERT:          'event:restock_alert',
+  STOCK_WARNING:          'event:stock_warning',
+  SHIPPING_UPDATE:        'event:shipping_update',
+};
+
+/**
+ * Notification type definitions with icons and colors
+ */
+const NOTIFICATION_TYPES = {
+  drop:           { icon: '🔥', color: '#d4001a', label: 'New Drop',     sound: 'drop'     },
+  order:          { icon: '📦', color: '#c8922a', label: 'Order Update', sound: 'order'    },
+  payment:        { icon: '✅', color: '#1a7a3a', label: 'Payment',      sound: 'success'  },
+  restock:        { icon: '♻️', color: '#1a5a8a', label: 'Restock',      sound: 'chime'    },
+  shipping:       { icon: '🚚', color: '#4a3a8a', label: 'Shipping',     sound: 'chime'    },
+  stock_warning:  { icon: '⚠️', color: '#8a5a00', label: 'Low Stock',    sound: 'warning'  },
+  announcement:   { icon: '📣', color: '#8a0a8a', label: 'Announcement', sound: 'announce' },
+};
+
+/**
+ * Rate limit config for socket events (events per minute per user)
+ */
+const RATE_LIMITS = {
+  'admin:broadcast':  { max: 10,  window: 60000 },
+  'admin:send_user':  { max: 30,  window: 60000 },
+  'admin:schedule':   { max: 20,  window: 60000 },
+  'notification:*':   { max: 100, window: 60000 },
+};
+
+module.exports = { EVENTS, NOTIFICATION_TYPES, RATE_LIMITS };
