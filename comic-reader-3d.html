@@ -1,0 +1,1621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MENACE 3D COMIC READER</title>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Montserrat:wght@200;300;400;500;600;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <style>
+    /* ═══════════════════════════════════════════════════════════════
+       DESIGN TOKENS
+       ═══════════════════════════════════════════════════════════════ */
+    :root {
+      --ink: #030205;
+      --ink-2: #07040c;
+      --ink-3: #0e0915;
+      --ink-4: #16101f;
+      --surface: #1c1428;
+      --surface-2: #241c32;
+      --surface-3: #2c243c;
+      --red: #c8001a;
+      --red-2: #e8001e;
+      --red-3: #ff1e38;
+      --gold: #c07828;
+      --gold-2: #d89040;
+      --text: #f0e8f5;
+      --text-2: #b8a8c8;
+      --text-3: #7860a0;
+      --text-4: #3c2c54;
+      --border: rgba(200,0,26,.12);
+      --z-nav: 800;
+      --z-modal: 1000;
+      --z-toast: 2000;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; overflow: hidden; background: var(--ink); }
+    body {
+      font-family: 'Montserrat', sans-serif;
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Film grain */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.38;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.88' numOctaves='4' result='noise'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.4'/%3E%3C/svg%3E");
+      mix-blend-mode: overlay;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       CANVAS & LAYOUT
+       ═══════════════════════════════════════════════════════════════ */
+    #threeCanvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: grab;
+    }
+
+    #threeCanvas:active {
+      cursor: grabbing;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       OVERLAY UI
+       ═══════════════════════════════════════════════════════════════ */
+    .ui-overlay {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    /* TOP BAR */
+    .top-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      background: linear-gradient(180deg, rgba(3,2,5,.95), transparent);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 30px;
+      z-index: var(--z-nav);
+      border-bottom: 1px solid var(--border);
+      pointer-events: all;
+    }
+
+    .brand {
+      font-family: 'Anton', sans-serif;
+      font-size: 1.8rem;
+      letter-spacing: 5px;
+      color: white;
+    }
+
+    .brand span {
+      color: var(--red-2);
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 11px 20px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: 0.2s;
+      font-family: 'Montserrat', sans-serif;
+      border-radius: 2px;
+    }
+
+    .btn:hover {
+      background: rgba(200,0,26,.2);
+      border-color: var(--red-2);
+      color: var(--red-2);
+    }
+
+    .btn.primary {
+      background: var(--red);
+      border-color: var(--red-2);
+      color: white;
+    }
+
+    .btn.primary:hover {
+      background: var(--red-2);
+    }
+
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* BOTTOM CONTROLS */
+    .bottom-controls {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 80px;
+      background: linear-gradient(0deg, rgba(3,2,5,.98), transparent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      padding: 0 30px;
+      z-index: var(--z-nav);
+      border-top: 1px solid var(--border);
+      pointer-events: all;
+    }
+
+    .ctrl-btn {
+      width: 48px;
+      height: 48px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid var(--border);
+      color: white;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 2px;
+    }
+
+    .ctrl-btn:hover:not(:disabled) {
+      background: rgba(200,0,26,.25);
+      border-color: var(--red-2);
+      transform: scale(1.08);
+    }
+
+    .ctrl-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .page-display {
+      font-family: 'Anton', sans-serif;
+      font-size: 1.4rem;
+      letter-spacing: 3px;
+      color: var(--gold-2);
+      min-width: 140px;
+      text-align: center;
+    }
+
+    .progress-track {
+      flex: 1;
+      max-width: 400px;
+      height: 4px;
+      background: rgba(255,255,255,.08);
+      border-radius: 2px;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--red), var(--gold));
+      border-radius: 2px;
+      transition: width 0.2s ease;
+    }
+
+    .progress-thumb {
+      position: absolute;
+      top: 50%;
+      width: 12px;
+      height: 12px;
+      background: white;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      border: 2px solid var(--red-2);
+      box-shadow: 0 0 8px rgba(200,0,26,.5);
+    }
+
+    /* CENTER INFO */
+    .center-info {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      pointer-events: none;
+      z-index: 50;
+      transition: opacity 0.5s;
+    }
+
+    .center-info.hidden {
+      opacity: 0;
+    }
+
+    .center-title {
+      font-family: 'Anton', sans-serif;
+      font-size: clamp(2.5rem, 6vw, 5rem);
+      letter-spacing: 4px;
+      line-height: 1;
+      margin-bottom: 20px;
+      text-shadow: 0 0 30px rgba(200,0,26,.5);
+    }
+
+    .center-sub {
+      font-size: 0.9rem;
+      letter-spacing: 3px;
+      color: var(--gold-2);
+      text-transform: uppercase;
+    }
+
+    .center-hint {
+      margin-top: 30px;
+      font-size: 0.7rem;
+      letter-spacing: 2px;
+      color: rgba(255,255,255,.3);
+      text-transform: uppercase;
+      animation: hintPulse 2s infinite;
+    }
+
+    @keyframes hintPulse {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 0.8; }
+    }
+
+    /* SIDE PANELS */
+    .side-panel {
+      position: fixed;
+      top: 64px;
+      width: 340px;
+      bottom: 80px;
+      background: rgba(14,6,18,.98);
+      border: 1px solid var(--border);
+      transform: translateX(-400px);
+      transition: transform 0.4s cubic-bezier(.25,.46,.45,.94);
+      z-index: 700;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      pointer-events: all;
+    }
+
+    .side-panel.right {
+      right: 0;
+      left: auto;
+      transform: translateX(400px);
+      border-left: 1px solid var(--border);
+      border-right: none;
+    }
+
+    .side-panel.open {
+      transform: translateX(0);
+    }
+
+    .side-panel.right.open {
+      transform: translateX(0);
+    }
+
+    .panel-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .panel-header h3 {
+      font-family: 'Anton', sans-serif;
+      font-size: 1.1rem;
+      letter-spacing: 3px;
+      color: var(--red-2);
+    }
+
+    .panel-close {
+      background: none;
+      border: none;
+      color: var(--text-3);
+      font-size: 1.4rem;
+      cursor: pointer;
+      transition: 0.2s;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .panel-close:hover {
+      color: var(--red-2);
+    }
+
+    .panel-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+
+    .panel-content::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .panel-content::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .panel-content::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 2px;
+    }
+
+    .panel-footer {
+      padding: 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* UPLOAD ZONE */
+    .upload-zone {
+      border: 2px dashed var(--border);
+      padding: 30px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: 0.25s;
+      background: transparent;
+      border-radius: 2px;
+      margin-bottom: 16px;
+    }
+
+    .upload-zone:hover,
+    .upload-zone.drag {
+      border-color: var(--red-2);
+      background: rgba(200,0,26,.08);
+    }
+
+    .upload-icon {
+      font-size: 2.5rem;
+      display: block;
+      margin-bottom: 10px;
+    }
+
+    .upload-label {
+      font-size: 0.75rem;
+      letter-spacing: 2px;
+      color: var(--text-3);
+      line-height: 1.5;
+    }
+
+    .upload-label strong {
+      color: var(--text);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    /* PAGES LIST */
+    .pages-list-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      background: rgba(255,255,255,.03);
+      border: 1px solid var(--border);
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: 0.15s;
+      border-radius: 2px;
+    }
+
+    .pages-list-item:hover {
+      background: rgba(200,0,26,.1);
+      border-color: rgba(200,0,26,.3);
+    }
+
+    .pages-list-item.active {
+      background: rgba(200,0,26,.15);
+      border-color: var(--red-2);
+    }
+
+    .page-thumb {
+      width: 35px;
+      height: 50px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+      overflow: hidden;
+      border-radius: 1px;
+    }
+
+    .page-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .page-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .page-num {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: var(--red-2);
+    }
+
+    .page-name {
+      font-size: 0.7rem;
+      color: var(--text-3);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 2px;
+    }
+
+    .remove-btn {
+      background: none;
+      border: none;
+      color: rgba(255,255,255,.15);
+      font-size: 1rem;
+      cursor: pointer;
+      transition: 0.2s;
+      flex-shrink: 0;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .remove-btn:hover {
+      color: var(--red-2);
+    }
+
+    /* FORM INPUTS */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      font-size: 0.65rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--text-3);
+    }
+
+    .form-input {
+      background: var(--ink-3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 11px 14px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.8rem;
+      width: 100%;
+      transition: border-color 0.2s;
+      border-radius: 2px;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--red-2);
+    }
+
+    .form-input::placeholder {
+      color: var(--text-4);
+    }
+
+    /* TOAST */
+    .toast {
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(14,6,18,.95);
+      border: 1px solid var(--border);
+      padding: 12px 24px;
+      font-size: 0.75rem;
+      letter-spacing: 2px;
+      border-radius: 2px;
+      z-index: var(--z-toast);
+      opacity: 0;
+      transition: 0.3s;
+      pointer-events: all;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* LOADING SCREEN */
+    .loading-screen {
+      position: fixed;
+      inset: 0;
+      background: var(--ink);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 1;
+      transition: opacity 0.8s;
+    }
+
+    .loading-screen.done {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .loading-logo {
+      font-family: 'Anton', sans-serif;
+      font-size: 3.5rem;
+      letter-spacing: 8px;
+      margin-bottom: 10px;
+    }
+
+    .loading-logo span {
+      color: var(--red-2);
+    }
+
+    .loading-sub {
+      font-size: 0.75rem;
+      letter-spacing: 4px;
+      color: var(--text-3);
+      margin-bottom: 50px;
+      text-transform: uppercase;
+    }
+
+    .loading-bar-wrap {
+      width: 280px;
+      height: 3px;
+      background: rgba(255,255,255,.08);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .loading-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--red), var(--gold));
+      width: 0%;
+      transition: width 0.1s linear;
+    }
+
+    /* KEYBOARD HINTS */
+    .key-hints {
+      position: fixed;
+      bottom: 100px;
+      right: 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      z-index: 100;
+      pointer-events: none;
+    }
+
+    .key-hint {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.65rem;
+      letter-spacing: 1px;
+      color: var(--text-3);
+      opacity: 0.6;
+    }
+
+    .key {
+      background: rgba(255,255,255,.08);
+      border: 1px solid var(--border);
+      padding: 3px 8px;
+      border-radius: 2px;
+      font-size: 0.6rem;
+      font-weight: 700;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      .side-panel {
+        width: 300px;
+      }
+
+      .key-hints {
+        display: none;
+      }
+
+      .top-bar {
+        padding: 0 20px;
+      }
+
+      .bottom-controls {
+        padding: 0 20px;
+        gap: 10px;
+      }
+
+      .progress-track {
+        max-width: 200px;
+      }
+
+      .btn {
+        padding: 9px 16px;
+        font-size: 0.6rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOADING SCREEN -->
+<div class="loading-screen" id="loadingScreen">
+  <div class="loading-logo">MENACE<span>2</span>SOCIETY</div>
+  <div class="loading-sub">3D Comic Reader</div>
+  <div class="loading-bar-wrap">
+    <div class="loading-bar" id="loadingBar"></div>
+  </div>
+</div>
+
+<!-- THREE.JS CANVAS -->
+<canvas id="threeCanvas"></canvas>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+  <div class="brand">M<span>2</span>S</div>
+  <div style="flex: 1; text-align: center; font-family: 'Anton', sans-serif; font-size: 1.3rem; letter-spacing: 3px; color: var(--gold-2);" id="bookTitle">
+    MENACE ORIGINS
+  </div>
+  <div class="top-actions">
+    <button class="btn" onclick="togglePanel('pages')">📚 PAGES</button>
+    <button class="btn" onclick="togglePanel('cover')">🎨 COVER</button>
+    <button class="btn primary" onclick="exportBook()">💾 EXPORT</button>
+  </div>
+</div>
+
+<!-- BOTTOM CONTROLS -->
+<div class="bottom-controls">
+  <button class="ctrl-btn" onclick="goToPage(0)" title="First Page">⏮</button>
+  <button class="ctrl-btn" id="prevBtn" onclick="flipPrev()">◀</button>
+  <div class="page-display" id="pageDisplay">COVER</div>
+  <div class="progress-track" id="progressTrack" onclick="seekProgress(event)">
+    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+    <div class="progress-thumb" id="progressThumb" style="left: 0%"></div>
+  </div>
+  <button class="ctrl-btn" id="nextBtn" onclick="flipNext()">▶</button>
+  <button class="ctrl-btn" onclick="goToPage(pages.length-1)" title="Last Page">⏭</button>
+  <button class="ctrl-btn" onclick="toggleAutoFlip()" title="Auto-Read" id="autoFlipBtn">▶</button>
+</div>
+
+<!-- LEFT PANEL - PAGES -->
+<div class="side-panel" id="pagesPanel">
+  <div class="panel-header">
+    <h3>PAGES</h3>
+    <button class="panel-close" onclick="togglePanel('pages')">✕</button>
+  </div>
+
+  <div class="panel-content">
+    <div class="upload-zone" id="uploadZone" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event)">
+      <div class="upload-icon">📂</div>
+      <div class="upload-label">
+        <strong>Drop pages here</strong>
+        JPG, PNG, WEBP, GIF supported
+      </div>
+    </div>
+
+    <button class="btn primary" style="width: 100%; margin-bottom: 16px;" onclick="triggerFileInput()">
+      ⬆ IMPORT PAGES
+    </button>
+
+    <input type="file" id="fileInput" multiple accept="image/*" style="display: none;" onchange="handleFiles(this)">
+
+    <button class="btn" style="width: 100%; margin-bottom: 16px;" onclick="loadDemoPages()">
+      ⭐ LOAD DEMO
+    </button>
+
+    <div id="pagesList"></div>
+  </div>
+
+  <div class="panel-footer">
+    <button class="btn" onclick="clearAllPages()" style="width: 100%;">🗑 CLEAR ALL</button>
+  </div>
+</div>
+
+<!-- RIGHT PANEL - COVER -->
+<div class="side-panel right" id="coverPanel">
+  <div class="panel-header">
+    <h3>EDIT COVER</h3>
+    <button class="panel-close" onclick="togglePanel('cover')">✕</button>
+  </div>
+
+  <div class="panel-content">
+    <div class="form-group">
+      <label class="form-label">BOOK TITLE</label>
+      <input type="text" class="form-input" id="titleInput" placeholder="Enter book title" value="MENACE ORIGINS" oninput="updateBookTitle(this.value)">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">SUBTITLE</label>
+      <input type="text" class="form-input" id="subtitleInput" placeholder="Enter subtitle" value="A 3D Comic Experience" oninput="updateBookSubtitle(this.value)">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">AUTHOR</label>
+      <input type="text" class="form-input" id="authorInput" placeholder="Enter author name" value="MENACE 2 SOCIETY" oninput="updateBookAuthor(this.value)">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">COVER COLOR</label>
+      <input type="color" class="form-input" id="coverColorInput" value="#0e0915" oninput="updateCoverColor(this.value)" style="height: 50px; cursor: pointer;">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">ACCENT COLOR</label>
+      <input type="color" class="form-input" id="accentColorInput" value="#e8001e" oninput="updateAccentColor(this.value)" style="height: 50px; cursor: pointer;">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">COVER IMAGE</label>
+      <div class="upload-zone" style="padding: 20px;" onclick="document.getElementById('coverImageInput').click()">
+        <div class="upload-icon">🖼</div>
+        <div class="upload-label">Click to upload cover</div>
+      </div>
+      <input type="file" id="coverImageInput" accept="image/*" style="display: none;" onchange="handleCoverImage(this)">
+    </div>
+
+    <button class="btn primary" style="width: 100%;" onclick="generateCover()">
+      ✨ REGENERATE COVER
+    </button>
+  </div>
+</div>
+
+<!-- CENTER INFO -->
+<div class="center-info" id="centerInfo">
+  <div class="center-title" id="centerTitle">MENACE<br>ORIGINS</div>
+  <div class="center-sub">A 3D Comic Experience</div>
+  <div class="center-hint">← → to flip · Drag to rotate · Click 📚 to import pages</div>
+</div>
+
+<!-- KEYBOARD HINTS -->
+<div class="key-hints">
+  <div class="key-hint"><span class="key">←</span> Previous page</div>
+  <div class="key-hint"><span class="key">→</span> Next page</div>
+  <div class="key-hint"><span class="key">SPACE</span> Auto-read</div>
+  <div class="key-hint"><span class="key">DRAG</span> Rotate book</div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   STORAGE & STATE
+   ═══════════════════════════════════════════════════════════════ */
+const STORAGE_KEY = 'menace-comic-book';
+
+let bookState = {
+  title: 'MENACE ORIGINS',
+  subtitle: 'A 3D Comic Experience',
+  author: 'MENACE 2 SOCIETY',
+  coverColor: '#0e0915',
+  accentColor: '#e8001e',
+  coverImage: null,
+  pages: []
+};
+
+let pages = [];
+let currentPageIdx = 0;
+let autoFlipping = false;
+let autoFlipInterval = null;
+let openPanel = null;
+
+// Load state from localStorage
+function loadState() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    try {
+      bookState = JSON.parse(saved);
+      pages = bookState.pages;
+      updateUIFromState();
+    } catch (e) {
+      console.error('Failed to load state:', e);
+    }
+  }
+}
+
+// Save state to localStorage
+function saveState() {
+  bookState.pages = pages;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(bookState));
+}
+
+function updateUIFromState() {
+  document.getElementById('titleInput').value = bookState.title;
+  document.getElementById('subtitleInput').value = bookState.subtitle;
+  document.getElementById('authorInput').value = bookState.author;
+  document.getElementById('coverColorInput').value = bookState.coverColor;
+  document.getElementById('accentColorInput').value = bookState.accentColor;
+  document.getElementById('bookTitle').textContent = bookState.title;
+  updatePagesList();
+  buildBookCover();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TOAST NOTIFICATIONS
+   ═══════════════════════════════════════════════════════════════ */
+let toastTimeout;
+function showToast(message) {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.classList.add('show');
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => {
+    toast.classList.remove('show');
+  }, 3000);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PANEL MANAGEMENT
+   ═══════════════════════════════════════════════════════════════ */
+function togglePanel(name) {
+  const panels = {
+    pages: 'pagesPanel',
+    cover: 'coverPanel'
+  };
+
+  if (openPanel === name) {
+    document.getElementById(panels[name]).classList.remove('open');
+    openPanel = null;
+  } else {
+    // Close other panels
+    Object.values(panels).forEach(p => document.getElementById(p).classList.remove('open'));
+    document.getElementById(panels[name]).classList.add('open');
+    openPanel = name;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FILE HANDLING
+   ═══════════════════════════════════════════════════════════════ */
+function triggerFileInput() {
+  document.getElementById('fileInput').click();
+}
+
+function handleFiles(input) {
+  const files = Array.from(input.files);
+  if (!files.length) return;
+
+  files.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+
+  let loaded = 0;
+  files.forEach((file, i) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      pages.push({
+        id: Date.now() + i,
+        url: e.target.result,
+        name: file.name.replace(/\.[^.]+$/, ''),
+        chapter: 'Chapter ' + (Math.floor(pages.length / 5) + 1)
+      });
+      loaded++;
+
+      if (loaded === files.length) {
+        pages.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { numeric: true }));
+        updatePagesList();
+        buildBookTextures();
+        goToPage(0);
+        saveState();
+        showToast(`✅ ${files.length} page(s) imported`);
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+
+  input.value = '';
+}
+
+function handleDrop(event) {
+  event.preventDefault();
+  document.getElementById('uploadZone').classList.remove('drag');
+
+  const files = Array.from(event.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+  if (!files.length) {
+    showToast('⚠️ Only image files are supported');
+    return;
+  }
+
+  const fakeInput = { files };
+  handleFiles(fakeInput);
+}
+
+function handleCoverImage(input) {
+  if (!input.files.length) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    bookState.coverImage = e.target.result;
+    buildBookCover();
+    saveState();
+    showToast('✅ Cover image updated');
+  };
+  reader.readAsDataURL(input.files[0]);
+
+  input.value = '';
+}
+
+function removePage(id) {
+  pages = pages.filter(p => p.id !== id);
+  updatePagesList();
+  buildBookTextures();
+  if (currentPageIdx >= pages.length) {
+    currentPageIdx = Math.max(0, pages.length - 1);
+  }
+  goToPage(currentPageIdx);
+  saveState();
+  showToast('🗑️ Page removed');
+}
+
+function clearAllPages() {
+  if (confirm('Clear all pages? This cannot be undone.')) {
+    pages = [];
+    updatePagesList();
+    clearBookTextures();
+    goToPage(0);
+    saveState();
+    showToast('🗑️ All pages cleared');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DEMO PAGES
+   ═══════════════════════════════════════════════════════════════ */
+function createDemoCanvas(pageNum, total) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 800;
+  canvas.height = 1100;
+  const ctx = canvas.getContext('2d');
+
+  // Background
+  const hue = Math.floor((pageNum / total) * 40 + 340) % 360;
+  ctx.fillStyle = `hsl(${hue}, 80%, 5%)`;
+  ctx.fillRect(0, 0, 800, 1100);
+
+  // Panel grid
+  const layouts = [
+    [[0, 0, 800, 1100]],
+    [[20, 20, 370, 510], [410, 20, 370, 510], [20, 550, 370, 510], [410, 550, 370, 510]],
+    [[20, 20, 760, 340], [20, 380, 370, 690], [410, 380, 370, 690]],
+    [[20, 20, 370, 690], [410, 20, 370, 690], [20, 730, 760, 340]],
+  ];
+  const layout = pageNum === 0 ? layouts[0] : layouts[(pageNum - 1) % (layouts.length - 1) + 1];
+
+  layout.forEach((panel, i) => {
+    const [x, y, w, h] = panel;
+
+    // Panel background
+    const grad = ctx.createLinearGradient(x, y, x + w, y + h);
+    grad.addColorStop(0, `hsl(${(hue + i * 20) % 360}, 70%, 8%)`);
+    grad.addColorStop(1, `hsl(${(hue + i * 20 + 40) % 360}, 80%, 12%)`);
+    ctx.fillStyle = grad;
+    ctx.fillRect(x, y, w, h);
+
+    // Panel border
+    ctx.strokeStyle = `hsl(${hue}, 60%, 35%)`;
+    ctx.lineWidth = 3;
+    ctx.strokeRect(x + 4, y + 4, w - 8, h - 8);
+
+    // Red accent
+    ctx.strokeStyle = '#e8001e';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(x + 8, y + 8, w - 16, h - 16);
+
+    // Panel text
+    ctx.font = `bold ${Math.min(w, h) * 0.35}px Anton, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = `hsla(${hue}, 50%, 20%, 0.6)`;
+    ctx.fillText(pageNum === 0 ? 'M' : i + 1, x + w / 2, y + h / 2);
+
+    // Decorative lines
+    for (let l = 0; l < 3; l++) {
+      ctx.strokeStyle = `hsla(0, 80%, 50%, ${0.05 + l * 0.03})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x + 20 + l * 8, y + h - 40 - l * 5);
+      ctx.lineTo(x + w - 20 - l * 8, y + h - 40 - l * 5);
+      ctx.stroke();
+    }
+  });
+
+  // Cover special styling
+  if (pageNum === 0) {
+    ctx.font = 'bold 80px Anton, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'rgba(232,0,30,0.15)';
+    ctx.fillText('MENACE', 400, 400);
+    ctx.font = 'bold 68px Anton, sans-serif';
+    ctx.fillStyle = '#f5eef8';
+    ctx.fillText('MENACE', 400, 398);
+    ctx.font = 'bold 24px Montserrat, sans-serif';
+    ctx.fillStyle = '#d89040';
+    ctx.fillText('ORIGINS', 400, 490);
+    ctx.font = '400 18px Montserrat, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.fillText('A 3D COMIC UNIVERSE', 400, 530);
+
+    // Red bar
+    ctx.fillStyle = '#e8001e';
+    ctx.fillRect(0, 580, 800, 4);
+  }
+
+  // Page number
+  ctx.font = '500 16px Montserrat, sans-serif';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'bottom';
+  ctx.fillStyle = 'rgba(255,255,255,0.25)';
+  ctx.fillText(pageNum === 0 ? 'COVER' : 'PG ' + pageNum, 780, 1085);
+
+  return canvas.toDataURL('image/jpeg', 0.92);
+}
+
+function loadDemoPages() {
+  pages = [];
+  const count = 10;
+
+  for (let i = 0; i < count; i++) {
+    const dataURL = createDemoCanvas(i, count);
+    pages.push({
+      id: i,
+      url: dataURL,
+      name: i === 0 ? 'COVER' : 'PAGE ' + i,
+      chapter: i === 0 ? 'Cover' : i < 4 ? 'Chapter I' : i < 7 ? 'Chapter II' : 'Chapter III'
+    });
+  }
+
+  updatePagesList();
+  buildBookTextures();
+  goToPage(0);
+  saveState();
+  showToast('✨ 10 demo pages loaded');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BOOK TITLE & COVER
+   ═══════════════════════════════════════════════════════════════ */
+function updateBookTitle(value) {
+  bookState.title = value;
+  document.getElementById('bookTitle').textContent = value;
+  document.getElementById('centerTitle').textContent = value;
+  buildBookCover();
+  saveState();
+}
+
+function updateBookSubtitle(value) {
+  bookState.subtitle = value;
+  buildBookCover();
+  saveState();
+}
+
+function updateBookAuthor(value) {
+  bookState.author = value;
+  buildBookCover();
+  saveState();
+}
+
+function updateCoverColor(value) {
+  bookState.coverColor = value;
+  buildBookCover();
+  saveState();
+}
+
+function updateAccentColor(value) {
+  bookState.accentColor = value;
+  buildBookCover();
+  saveState();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   EXPORT & IMPORT
+   ═══════════════════════════════════════════════════════════════ */
+function exportBook() {
+  const dataStr = JSON.stringify(bookState, null, 2);
+  const dataBlob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(dataBlob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${bookState.title.replace(/\s+/g, '-')}.menace`;
+  link.click();
+  URL.revokeObjectURL(url);
+  showToast('💾 Book exported successfully');
+}
+
+function importBook(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      bookState = imported;
+      pages = bookState.pages;
+      updateUIFromState();
+      buildBookTextures();
+      goToPage(0);
+      showToast('✅ Book imported successfully');
+    } catch (err) {
+      showToast('❌ Failed to import book');
+    }
+  };
+  reader.readAsText(file);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PAGE LIST UI
+   ═══════════════════════════════════════════════════════════════ */
+function updatePagesList() {
+  const list = document.getElementById('pagesList');
+
+  if (!pages.length) {
+    list.innerHTML = '<div style="text-align: center; padding: 30px 10px; color: var(--text-3); font-size: 0.8rem;">No pages yet. Upload or load demo pages above.</div>';
+    return;
+  }
+
+  list.innerHTML = pages.map((p, i) => `
+    <div class="pages-list-item ${i === currentPageIdx ? 'active' : ''}" onclick="goToPage(${i})">
+      <div class="page-thumb">
+        <img src="${p.url}" alt="${p.name}">
+      </div>
+      <div class="page-info">
+        <div class="page-num">${i === 0 ? 'COVER' : 'PG ' + i}</div>
+        <div class="page-name">${p.name || 'Page ' + (i + 1)}</div>
+      </div>
+      <button class="remove-btn" onclick="event.stopPropagation(); removePage(${p.id})">✕</button>
+    </div>
+  `).join('');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PAGE NAVIGATION
+   ═══════════════════════════════════════════════════════════════ */
+function goToPage(index) {
+  if (!pages.length) return;
+  currentPageIdx = Math.max(0, Math.min(index, pages.length - 1));
+  updatePagesList();
+  updateHUD();
+  updateBookPage();
+  saveState();
+
+  if (index === 0 || index === pages.length - 1) {
+    document.getElementById('centerInfo').classList.remove('hidden');
+    setTimeout(() => {
+      if (currentPageIdx === index) {
+        document.getElementById('centerInfo').classList.add('hidden');
+      }
+    }, 4000);
+  } else {
+    document.getElementById('centerInfo').classList.add('hidden');
+  }
+}
+
+function flipNext() {
+  if (currentPageIdx < pages.length - 1) {
+    goToPage(currentPageIdx + 1);
+    animatePageFlip();
+  }
+}
+
+function flipPrev() {
+  if (currentPageIdx > 0) {
+    goToPage(currentPageIdx - 1);
+    animatePageFlip();
+  }
+}
+
+function toggleAutoFlip() {
+  autoFlipping = !autoFlipping;
+  const btn = document.getElementById('autoFlipBtn');
+
+  if (autoFlipping) {
+    btn.textContent = '⏸';
+    autoFlipInterval = setInterval(() => {
+      if (currentPageIdx < pages.length - 1) {
+        flipNext();
+      } else {
+        toggleAutoFlip();
+      }
+    }, 4000);
+    showToast('▶️ Auto-reading');
+  } else {
+    btn.textContent = '▶';
+    clearInterval(autoFlipInterval);
+  }
+}
+
+function seekProgress(e) {
+  if (!pages.length) return;
+  const rect = e.currentTarget.getBoundingClientRect();
+  const pct = (e.clientX - rect.left) / rect.width;
+  const idx = Math.round(pct * (pages.length - 1));
+  goToPage(idx);
+}
+
+function updateHUD() {
+  const total = pages.length;
+  const idx = currentPageIdx;
+  const pct = total > 1 ? (idx / (total - 1)) * 100 : 0;
+
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressThumb').style.left = pct + '%';
+  document.getElementById('pageDisplay').textContent = idx === 0 ? 'COVER' : idx === total - 1 && total > 1 ? 'END' : 'PG ' + idx;
+
+  document.getElementById('prevBtn').disabled = idx === 0;
+  document.getElementById('nextBtn').disabled = idx === total - 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   KEYBOARD CONTROLS
+   ═══════════════════════════════════════════════════════════════ */
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight') flipNext();
+  if (e.key === 'ArrowLeft') flipPrev();
+  if (e.key === ' ') {
+    e.preventDefault();
+    toggleAutoFlip();
+  }
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   THREE.JS SETUP
+   ═══════════════════════════════════════════════════════════════ */
+const canvas = document.getElementById('threeCanvas');
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 1000);
+camera.position.set(0, 0.2, 4);
+
+const renderer = new THREE.WebGLRenderer({
+  canvas,
+  antialias: true,
+  alpha: true,
+  preserveDrawingBuffer: true
+});
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+
+// Scene
+scene.fog = new THREE.FogExp2(0x08030a, 0.08);
+scene.background = new THREE.Color(0x08030a);
+
+// Lights
+const ambLight = new THREE.AmbientLight(0x200818, 1);
+scene.add(ambLight);
+
+const keyLight = new THREE.DirectionalLight(0xfff8f0, 2.8);
+keyLight.position.set(3, 5, 4);
+keyLight.castShadow = true;
+keyLight.shadow.mapSize.set(2048, 2048);
+scene.add(keyLight);
+
+const rimLight = new THREE.DirectionalLight(0xe8001e, 0.9);
+rimLight.position.set(-4, 2, -3);
+scene.add(rimLight);
+
+// Environment
+const starsGeo = new THREE.BufferGeometry();
+const starCount = 1000;
+const starPos = new Float32Array(starCount * 3);
+for (let i = 0; i < starCount * 3; i++) starPos[i] = (Math.random() - 0.5) * 80;
+starsGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+const starsMat = new THREE.PointsMaterial({ color: 0x8040a0, size: 0.05 });
+const stars = new THREE.Points(starsGeo, starsMat);
+scene.add(stars);
+
+// Book group
+const bookGroup = new THREE.Group();
+scene.add(bookGroup);
+
+const BOOK_W = 1.5;
+const BOOK_H = 2.1;
+const BOOK_D = 0.08;
+
+// Book materials
+const bookMaterials = {};
+const textureCache = {};
+
+function createCanvasTexture(canvas) {
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.magFilter = THREE.LinearFilter;
+  texture.minFilter = THREE.LinearFilter;
+  return texture;
+}
+
+function buildBookCover() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 600;
+  canvas.height = 800;
+  const ctx = canvas.getContext('2d');
+
+  // Background
+  ctx.fillStyle = bookState.coverColor;
+  ctx.fillRect(0, 0, 600, 800);
+
+  // Gradient overlay
+  const grad = ctx.createLinearGradient(0, 0, 600, 800);
+  grad.addColorStop(0, bookState.accentColor + '40');
+  grad.addColorStop(1, bookState.coverColor);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 600, 800);
+
+  // Use uploaded image if available
+  if (bookState.coverImage) {
+    const img = new Image();
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, 600, 800);
+      drawCoverText(ctx);
+      updateCoverTexture(canvas);
+    };
+    img.src = bookState.coverImage;
+  } else {
+    drawCoverText(ctx);
+    updateCoverTexture(canvas);
+  }
+}
+
+function drawCoverText(ctx) {
+  // Title
+  ctx.font = 'bold 90px Anton, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = 'rgba(232,0,30,0.2)';
+  ctx.fillText(bookState.title, 300, 300);
+
+  ctx.font = 'bold 80px Anton, sans-serif';
+  ctx.fillStyle = '#f5eef8';
+  ctx.fillText(bookState.title, 300, 295);
+
+  // Subtitle
+  ctx.font = '500 24px Montserrat, sans-serif';
+  ctx.fillStyle = bookState.accentColor;
+  ctx.fillText(bookState.subtitle, 300, 420);
+
+  // Author
+  ctx.font = '400 16px Montserrat, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  ctx.fillText(bookState.author, 300, 700);
+
+  // Decorative line
+  ctx.strokeStyle = bookState.accentColor;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(100, 450);
+  ctx.lineTo(500, 450);
+  ctx.stroke();
+}
+
+function updateCoverTexture(canvas) {
+  const texture = createCanvasTexture(canvas);
+  textureCache['cover'] = texture;
+  if (bookGroup.children.length > 0) {
+    bookGroup.children[0].material.map = texture;
+    bookGroup.children[0].material.needsUpdate = true;
+  }
+}
+
+function buildBookTextures() {
+  // Clear old pages
+  clearBookTextures();
+
+  // Create front cover
+  const frontCanvas = document.createElement('canvas');
+  frontCanvas.width = 600;
+  frontCanvas.height = 800;
+  const frontCtx = frontCanvas.getContext('2d');
+
+  if (pages.length > 0) {
+    const img = new Image();
+    img.onload = () => {
+      frontCtx.drawImage(img, 0, 0, 600, 800);
+      const texture = createCanvasTexture(frontCanvas);
+      const frontMat = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.7 });
+      createBookGeometry(frontMat, 'front');
+    };
+    img.src = pages[0].url;
+  } else {
+    buildBookCover();
+  }
+}
+
+function createBookGeometry(frontMaterial, side) {
+  // Front cover
+  const frontGeo = new THREE.BoxGeometry(BOOK_W, BOOK_H, BOOK_D / 4);
+  const frontMesh = new THREE.Mesh(frontGeo, frontMaterial);
+  frontMesh.position.z = BOOK_D / 4;
+  frontMesh.castShadow = true;
+  frontMesh.receiveShadow = true;
+
+  // Back cover (black)
+  const backMat = new THREE.MeshStandardMaterial({ color: 0x0a0412, roughness: 0.8 });
+  const backGeo = new THREE.BoxGeometry(BOOK_W, BOOK_H, BOOK_D / 4);
+  const backMesh = new THREE.Mesh(backGeo, backMat);
+  backMesh.position.z = -BOOK_D / 4;
+  backMesh.castShadow = true;
+  backMesh.receiveShadow = true;
+
+  // Spine (red accent)
+  const spineMat = new THREE.MeshStandardMaterial({ color: 0xe8001e });
+  const spineGeo = new THREE.BoxGeometry(BOOK_W, BOOK_H, BOOK_D);
+  const spineMesh = new THREE.Mesh(spineGeo, spineMat);
+  spineMesh.castShadow = true;
+  spineMesh.receiveShadow = true;
+
+  bookGroup.clear();
+  bookGroup.add(frontMesh);
+  bookGroup.add(backMesh);
+  bookGroup.add(spineMesh);
+}
+
+function clearBookTextures() {
+  bookGroup.clear();
+  Object.values(textureCache).forEach(tex => tex.dispose());
+}
+
+function updateBookPage() {
+  if (pages.length === 0) {
+    buildBookCover();
+    return;
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 600;
+  canvas.height = 800;
+  const ctx = canvas.getContext('2d');
+
+  const img = new Image();
+  img.onload = () => {
+    ctx.drawImage(img, 0, 0, 600, 800);
+    const texture = createCanvasTexture(canvas);
+    const material = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.7 });
+
+    if (bookGroup.children.length > 0) {
+      bookGroup.children[0].material = material;
+    } else {
+      createBookGeometry(material, 'page');
+    }
+  };
+  img.src = pages[currentPageIdx].url;
+}
+
+function animatePageFlip() {
+  const duration = 0.4;
+  const startTime = Date.now();
+
+  const animate = () => {
+    const elapsed = (Date.now() - startTime) / 1000;
+    const progress = Math.min(elapsed / duration, 1);
+
+    bookGroup.rotation.y = Math.sin(progress * Math.PI) * 0.3;
+
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      bookGroup.rotation.y = 0;
+    }
+  };
+
+  animate();
+}
+
+function generateCover() {
+  buildBookCover();
+  saveState();
+  showToast('✨ Cover regenerated');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MOUSE CONTROLS
+   ═══════════════════════════════════════════════════════════════ */
+let mouseDown = false;
+let mouseX = 0;
+let mouseY = 0;
+let targetRotX = 0;
+let targetRotY = 0;
+
+canvas.addEventListener('mousedown', (e) => {
+  mouseDown = true;
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+});
+
+document.addEventListener('mousemove', (e) => {
+  if (!mouseDown) return;
+
+  const deltaX = e.clientX - mouseX;
+  const deltaY = e.clientY - mouseY;
+
+  targetRotY += deltaX * 0.01;
+  targetRotX += deltaY * 0.01;
+
+  targetRotX = Math.max(-Math.PI / 6, Math.min(Math.PI / 6, targetRotX));
+
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+});
+
+document.addEventListener('mouseup', () => {
+  mouseDown = false;
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   ANIMATION LOOP
+   ═══════════════════════════════════════════════════════════════ */
+function animate() {
+  requestAnimationFrame(animate);
+
+  // Smooth rotation
+  bookGroup.rotation.x += (targetRotX - bookGroup.rotation.x) * 0.1;
+  bookGroup.rotation.y += (targetRotY - bookGroup.rotation.y) * 0.1;
+
+  // Ambient rotation when idle
+  if (!mouseDown) {
+    targetRotY += 0.0005;
+  }
+
+  renderer.render(scene, camera);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   WINDOW RESIZE
+   ═══════════════════════════════════════════════════════════════ */
+window.addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   INITIALIZATION
+   ═══════════════════════════════════════════════════════════════ */
+function init() {
+  buildBookCover();
+  updateHUD();
+  animate();
+
+  // Simulate loading
+  let loadPct = 0;
+  const loadInterval = setInterval(() => {
+    loadPct += Math.random() * 25 + 10;
+    if (loadPct > 100) loadPct = 100;
+    document.getElementById('loadingBar').style.width = loadPct + '%';
+
+    if (loadPct >= 100) {
+      clearInterval(loadInterval);
+      setTimeout(() => {
+        document.getElementById('loadingScreen').classList.add('done');
+      }, 300);
+    }
+  }, 100);
+
+  loadState();
+}
+
+init();
+</script>
+
+</body>
+</html>
