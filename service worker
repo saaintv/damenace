@@ -1,0 +1,111 @@
+// ================================================================
+// MENACE 2 SOCIETY — Service Worker
+// public/sw.js
+// ================================================================
+
+const CACHE_NAME = 'menace-v1';
+const STATIC_ASSETS = ['/', '/index.html'];
+
+// ── Install ──────────────────────────────────────────────────────
+self.addEventListener('install', (e) => {
+  e.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS))
+  );
+  self.skipWaiting();
+});
+
+// ── Activate ─────────────────────────────────────────────────────
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+    )
+  );
+  self.clients.claim();
+});
+
+// ── Fetch (cache-first for assets) ───────────────────────────────
+self.addEventListener('fetch', (e) => {
+  if (e.request.method !== 'GET') return;
+  if (e.request.url.includes('/api/') || e.request.url.includes('socket.io')) return;
+  e.respondWith(
+    caches.match(e.request).then(cached => cached || fetch(e.request))
+  );
+});
+
+// ── Push Notifications ────────────────────────────────────────────
+self.addEventListener('push', (e) => {
+  let data = {};
+  try { data = e.data?.json() || {}; } catch { data = { title: 'MENACE 2 SOCIETY', body: e.data?.text() || 'New notification' }; }
+
+  const title = data.title || 'MENACE 2 SOCIETY';
+  const options = {
+    body: data.message || data.body || '',
+    icon: data.icon || '/icon-192.png',
+    badge: '/badge-72.png',
+    image: data.image,
+    tag: data.id || 'menace-notif',
+    renotify: true,
+    requireInteraction: data.type === 'drop' || data.type === 'announcement',
+    vibrate: [200, 100, 200, 100, 400],
+    timestamp: data.timestamp ? new Date(data.timestamp).getTime() : Date.now(),
+    data: { url: data.actionUrl || '/', notifId: data.id, type: data.type },
+    actions: [
+      { action: 'view',   title: 'VIEW NOW' },
+      { action: 'dismiss', title: 'DISMISS'  }
+    ],
+    // Notification color (Chrome Android)
+    ...( data.type === 'drop'     && { badge: '🔥' }),
+    ...( data.type === 'payment'  && { badge: '✅' }),
+  };
+
+  e.waitUntil(self.registration.showNotification(title, options));
+});
+
+// ── Notification Click ────────────────────────────────────────────
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  if (e.action === 'dismiss') return;
+
+  const url = e.notification.data?.url || '/';
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
+      // Focus existing tab if open
+      for (const client of windowClients) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          client.focus();
+          client.postMessage({ type: 'NOTIFICATION_CLICK', notifId: e.notification.data?.notifId, url });
+          return;
+        }
+      }
+      // Open new tab
+      if (clients.openWindow) return clients.openWindow(url);
+    })
+  );
+});
+
+// ── Background Sync (offline queue) ──────────────────────────────
+self.addEventListener('sync', (e) => {
+  if (e.tag === 'sync-notifications') {
+    e.waitUntil(syncOfflineQueue());
+  }
+});
+
+async function syncOfflineQueue() {
+  try {
+    const cache = await caches.open('offline-queue');
+    const requests = await cache.keys();
+    for (const req of requests) {
+      try {
+        await fetch(req.clone());
+        await cache.delete(req);
+      } catch {}
+    }
+  } catch {}
+}
+
+// ── Message from Client ───────────────────────────────────────────
+self.addEventListener('message', (e) => {
+  if (e.data?.type === 'SKIP_WAITING') self.skipWaiting();
+  if (e.data?.type === 'GET_VERSION') e.source?.postMessage({ type: 'VERSION', version: CACHE_NAME });
+});
