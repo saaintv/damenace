@@ -1,0 +1,21 @@
+const activeUsers = new Map();
+
+export const trackPresence = (io) => {
+  io.on("connection", (socket) => {
+    activeUsers.set(socket.id, true);
+
+    io.emit(
+      "online-count",
+      activeUsers.size
+    );
+
+    socket.on("disconnect", () => {
+      activeUsers.delete(socket.id);
+
+      io.emit(
+        "online-count",
+        activeUsers.size
+      );
+    });
+  });
+};
