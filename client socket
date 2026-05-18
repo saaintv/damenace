@@ -1,0 +1,152 @@
+// ================================================================
+// MENACE 2 SOCIETY — Socket Client Manager
+// client/socketClient.js
+// Include via <script src="/socket.io/socket.io.js"> first
+// ================================================================
+
+class MenaceSocketClient {
+  constructor(options = {}) {
+    this.serverUrl = options.serverUrl || window.location.origin;
+    this.token = options.token || localStorage.getItem('menace_token');
+    this.userId = options.userId || localStorage.getItem('menace_user_id') || 'demo_user';
+    this.socket = null;
+    this.connected = false;
+    this.reconnectAttempts = 0;
+    this.maxReconnectAttempts = 10;
+    this.offlineQueue = [];
+    this.listeners = new Map();
+    this._init();
+  }
+
+  _init() {
+    this.socket = io(this.serverUrl, {
+      auth: { token: this.token },
+      query: { userId: this.userId },
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 10000,
+      reconnectionAttempts: this.maxReconnectAttempts,
+      timeout: 20000,
+      transports: ['websocket', 'polling']
+    });
+
+    this._bindCoreEvents();
+  }
+
+  _bindCoreEvents() {
+    this.socket.on('connect', () => {
+      this.connected = true;
+      this.reconnectAttempts = 0;
+      console.log('[Socket] Connected:', this.socket.id);
+      this._flushOfflineQueue();
+      this._emit('connection_change', { connected: true, id: this.socket.id });
+    });
+
+    this.socket.on('disconnect', (reason) => {
+      this.connected = false;
+      console.log('[Socket] Disconnected:', reason);
+      this._emit('connection_change', { connected: false, reason });
+    });
+
+    this.socket.on('connect_error', (err) => {
+      this.reconnectAttempts++;
+      console.warn('[Socket] Connect error:', err.message);
+      this._emit('connection_error', { error: err.message, attempt: this.reconnectAttempts });
+    });
+
+    this.socket.on('reconnect', (attempt) => {
+      console.log('[Socket] Reconnected after', attempt, 'attempts');
+      this._emit('reconnected', { attempt });
+    });
+
+    // Forward all server events to local listeners
+    const serverEvents = [
+      'notification:new', 'notification:history', 'notification:updated',
+      'notification:deleted', 'notification:cleared', 'notification:all_read',
+      'presence:update', 'order:progress', 'banner:announcement',
+      'activity:typing', 'error', 'push:subscribed',
+      'admin:analytics', 'admin:users', 'admin:scheduled_jobs',
+      'admin:job_scheduled', 'admin:job_complete', 'admin:job_cancelled'
+    ];
+
+    serverEvents.forEach(event => {
+      this.socket.on(event, (data) => this._emit(event, data));
+    });
+  }
+
+  // ── Public API ────────────────────────────────────────────────
+
+  /** Subscribe to an event */
+  on(event, callback) {
+    if (!this.listeners.has(event)) this.listeners.set(event, []);
+    this.listeners.get(event).push(callback);
+    return () => this.off(event, callback); // returns unsubscribe fn
+  }
+
+  /** Unsubscribe from an event */
+  off(event, callback) {
+    const cbs = this.listeners.get(event) || [];
+    this.listeners.set(event, cbs.filter(cb => cb !== callback));
+  }
+
+  /** Emit to server — queues if offline */
+  send(event, data) {
+    if (this.connected) {
+      this.socket.emit(event, data);
+    } else {
+      console.log('[Socket] Queuing offline event:', event);
+      this.offlineQueue.push({ event, data, timestamp: Date.now() });
+      if (this.offlineQueue.length > 50) this.offlineQueue.shift(); // cap queue
+    }
+  }
+
+  // ── Notification Actions ────────────────────────────────────
+
+  markRead(notifId)     { this.send('notification:read', notifId); }
+  markAllRead()         { this.send('notification:read_all'); }
+  deleteNotif(notifId)  { this.send('notification:delete', notifId); }
+  clearAll()            { this.send('notification:clear_all'); }
+
+  subscribePush(subscription) { this.send('push:subscribe', subscription); }
+  sendTyping(data)      { this.send('activity:typing', data); }
+
+  // ── Admin Actions ────────────────────────────────────────────
+
+  adminBroadcast(data)  { this.send('admin:broadcast', data); }
+  adminSendUser(data)   { this.send('admin:send_user', data); }
+  adminSchedule(data)   { this.send('admin:schedule', data); }
+  adminGetAnalytics()   { this.send('admin:get_analytics'); }
+  adminGetUsers()       { this.send('admin:get_users'); }
+  adminGetScheduled()   { this.send('admin:get_scheduled'); }
+  adminCancelJob(jobId) { this.send('admin:cancel_job', jobId); }
+
+  triggerDrop(data)     { this.send('event:new_drop', data); }
+  triggerOrder(data)    { this.send('event:order_update', data); }
+  triggerPayment(data)  { this.send('event:payment_success', data); }
+  triggerRestock(data)  { this.send('event:restock_alert', data); }
+  triggerStockWarn(data){ this.send('event:stock_warning', data); }
+  triggerShipping(data) { this.send('event:shipping_update', data); }
+
+  // ── Internal ──────────────────────────────────────────────────
+
+  _emit(event, data) {
+    const callbacks = this.listeners.get(event) || [];
+    callbacks.forEach(cb => { try { cb(data); } catch (e) { console.error('[Socket] Listener error:', e); } });
+  }
+
+  _flushOfflineQueue() {
+    if (!this.offlineQueue.length) return;
+    console.log(`[Socket] Flushing ${this.offlineQueue.length} queued events`);
+    const queue = [...this.offlineQueue];
+    this.offlineQueue = [];
+    queue.forEach(({ event, data }) => this.socket.emit(event, data));
+  }
+
+  disconnect() { this.socket?.disconnect(); }
+  isConnected() { return this.connected; }
+  getSocketId() { return this.socket?.id; }
+}
+
+// Export for module systems or expose as global
+if (typeof module !== 'undefined') module.exports = MenaceSocketClient;
+else window.MenaceSocketClient = MenaceSocketClient;
