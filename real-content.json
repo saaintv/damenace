@@ -1,0 +1,178 @@
+{
+  "comics": [
+    {
+      "id": "comic-1",
+      "title": "MENACE ORIGINS",
+      "subtitle": "Chapter I: The Beginning",
+      "description": "Follow the rise of the most feared organization in the city. This is where it all started.",
+      "image": "https://via.placeholder.com/400x600?text=Menace+Origins",
+      "status": "published",
+      "releaseDate": "2026-05-01",
+      "chapters": [
+        {
+          "number": 1,
+          "title": "The Rise",
+          "description": "In the shadow of the city, a new threat emerges.",
+          "pages": 12,
+          "releaseDate": "2026-05-01"
+        },
+        {
+          "number": 2,
+          "title": "The Crew",
+          "description": "Meet the members of the organization.",
+          "pages": 14,
+          "releaseDate": "2026-05-08"
+        }
+      ]
+    },
+    {
+      "id": "comic-2",
+      "title": "CHAOS RISING",
+      "subtitle": "Chapter II: The Power",
+      "description": "Power corrupts. Absolute power corrupts absolutely.",
+      "image": "https://via.placeholder.com/400x600?text=Chaos+Rising",
+      "status": "published",
+      "releaseDate": "2026-04-01"
+    }
+  ],
+  "characters": [
+    {
+      "id": "char-1",
+      "name": "CIPHER",
+      "role": "Leader",
+      "description": "The strategic mastermind behind MENACE. Cold, calculated, unstoppable.",
+      "image": "https://via.placeholder.com/300x400?text=Cipher",
+      "bio": "Former corporate executive turned revolutionary. Believes power is the only language.",
+      "affiliations": ["MENACE"],
+      "traits": ["Strategic", "Ruthless", "Charismatic"]
+    },
+    {
+      "id": "char-2",
+      "name": "RAZE",
+      "role": "Enforcer",
+      "description": "The muscle. Where Cipher plans, Raze executes.",
+      "image": "https://via.placeholder.com/300x400?text=Raze",
+      "bio": "Enhanced strength through experimental technology. Loyal to the code.",
+      "affiliations": ["MENACE"],
+      "traits": ["Powerful", "Loyal", "Direct"]
+    },
+    {
+      "id": "char-3",
+      "name": "ECHO",
+      "role": "Tech Specialist",
+      "description": "Master of information. Every secret can be uncovered.",
+      "image": "https://via.placeholder.com/300x400?text=Echo",
+      "bio": "Genius hacker with connections everywhere. Information is currency.",
+      "affiliations": ["MENACE"],
+      "traits": ["Intelligent", "Connected", "Mysterious"]
+    }
+  ],
+  "products": [
+    {
+      "id": "prod-1",
+      "title": "CHAOS HOODIE",
+      "description": "Premium heavyweight hoodie with embroidered MENACE graphics and red accents.",
+      "price": 89.99,
+      "image": "https://via.placeholder.com/400x500?text=Chaos+Hoodie",
+      "category": "clothing",
+      "collection": "CHAOS COLLECTION",
+      "inventory": 45,
+      "featured": true,
+      "sizes": ["S", "M", "L", "XL", "XXL"],
+      "colors": ["Black", "Red", "Navy"]
+    },
+    {
+      "id": "prod-2",
+      "title": "MENACE DENIM JACKET",
+      "description": "Distressed vintage denim with custom embroidery and hand-stitched details.",
+      "price": 129.99,
+      "image": "https://via.placeholder.com/400x500?text=Menace+Denim",
+      "category": "outerwear",
+      "collection": "ORIGINS",
+      "inventory": 12,
+      "featured": true,
+      "sizes": ["XS", "S", "M", "L", "XL"]
+    },
+    {
+      "id": "prod-3",
+      "title": "ORIGINS GRAPHIC TEE",
+      "description": "Classic MENACE ORIGINS graphic on premium cotton.",
+      "price": 34.99,
+      "image": "https://via.placeholder.com/400x500?text=Origins+Tee",
+      "category": "clothing",
+      "collection": "CLASSIC",
+      "inventory": 120,
+      "featured": false,
+      "sizes": ["S", "M", "L", "XL", "XXL"]
+    },
+    {
+      "id": "prod-4",
+      "title": "MENACE PATCH SET",
+      "description": "Limited edition embroidered patches. Collect them all.",
+      "price": 14.99,
+      "image": "https://via.placeholder.com/300x300?text=Patch+Set",
+      "category": "accessories",
+      "collection": "COLLECTIBLES",
+      "inventory": 500,
+      "featured": false
+    },
+    {
+      "id": "prod-5",
+      "title": "CIPHER SNAPBACK",
+      "description": "Structured snapback with embroidered logo and leather strap.",
+      "price": 44.99,
+      "image": "https://via.placeholder.com/300x300?text=Snapback",
+      "category": "accessories",
+      "collection": "ESSENTIALS",
+      "inventory": 80,
+      "featured": true,
+      "colors": ["Black", "Red", "Navy"]
+    }
+  ],
+  "drops": [
+    {
+      "id": "drop-1",
+      "name": "CHAOS COLLECTION VOL.1",
+      "description": "First limited edition drop of the MENACE line.",
+      "releaseDate": "2026-05-25T00:00:00Z",
+      "items": ["prod-1", "prod-2"],
+      "limited": true,
+      "quantity": 500,
+      "image": "https://via.placeholder.com/600x400?text=Chaos+Drop+Vol.1"
+    },
+    {
+      "id": "drop-2",
+      "name": "SUMMER ESSENTIALS",
+      "description": "Must-have pieces for the season.",
+      "releaseDate": "2026-06-15T00:00:00Z",
+      "items": ["prod-3", "prod-4", "prod-5"],
+      "limited": false,
+      "image": "https://via.placeholder.com/600x400?text=Summer+Essentials"
+    }
+  ],
+  "worldLore": {
+    "title": "THE MENACE UNIVERSE",
+    "timeline": "Present Day - 2026",
+    "setting": "Megacity (Modern Neo-Noir)",
+    "factions": [
+      {
+        "name": "MENACE",
+        "description": "The rising organization. Power through control.",
+        "alignment": "Chaotic Neutral",
+        "members": ["char-1", "char-2", "char-3"]
+      }
+    ],
+    "locations": [
+      {
+        "name": "The Underground",
+        "description": "Secret headquarters hidden beneath the city.",
+        "type": "Base"
+      },
+      {
+        "name": "The District",
+        "description": "The heart of operations. Where deals are made.",
+        "type": "Territory"
+      }
+    ]
+  }
+}
