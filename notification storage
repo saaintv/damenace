@@ -1,0 +1,143 @@
+// ================================================================
+// MENACE 2 SOCIETY — Notification Store
+// server/notifications.js
+// Replace in-memory store with MongoDB/Firebase in production
+// ================================================================
+
+const { v4: uuidv4 } = require('uuid');
+
+class NotificationStore {
+  constructor() {
+    this.notifications = [];
+    this.maxPerUser = 100; // keep last 100 per user
+  }
+
+  /**
+   * Create and store a notification
+   */
+  create({ userId, title, message, type = 'announcement', image = '🔔', actionUrl = '/' }) {
+    const notif = {
+      id: uuidv4(),
+      userId,
+      title: String(title || '').substring(0, 200),
+      message: String(message || '').substring(0, 500),
+      type,
+      image: String(image || '🔔').substring(0, 10),
+      actionUrl: String(actionUrl || '/').substring(0, 300),
+      timestamp: new Date().toISOString(),
+      read: false,
+      deletedBy: [] // track per-user soft deletes
+    };
+    this.notifications.push(notif);
+    this._pruneUser(userId);
+    return notif;
+  }
+
+  /**
+   * Get notifications for a user (includes global 'all' notifs)
+   */
+  getForUser(userId, { limit = 50, offset = 0, unreadOnly = false } = {}) {
+    let result = this.notifications.filter(n =>
+      (n.userId === userId || n.userId === 'all') &&
+      !n.deletedBy.includes(userId)
+    );
+    if (unreadOnly) result = result.filter(n => !n.read);
+    result.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    return result.slice(offset, offset + limit);
+  }
+
+  /**
+   * Count unread for a user
+   */
+  unreadCount(userId) {
+    return this.notifications.filter(n =>
+      (n.userId === userId || n.userId === 'all') &&
+      !n.read && !n.deletedBy.includes(userId)
+    ).length;
+  }
+
+  /**
+   * Mark one notification as read
+   */
+  markRead(notifId, userId) {
+    const n = this.notifications.find(n => n.id === notifId);
+    if (n && (n.userId === userId || n.userId === 'all')) {
+      n.read = true;
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Mark all notifications as read for a user
+   */
+  markAllRead(userId) {
+    this.notifications
+      .filter(n => (n.userId === userId || n.userId === 'all') && !n.deletedBy.includes(userId))
+      .forEach(n => n.read = true);
+  }
+
+  /**
+   * Soft-delete a notification for a specific user
+   */
+  delete(notifId, userId) {
+    const n = this.notifications.find(n => n.id === notifId);
+    if (n && !n.deletedBy.includes(userId)) {
+      n.deletedBy.push(userId);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Clear all notifications for a user
+   */
+  clearAll(userId) {
+    this.notifications
+      .filter(n => n.userId === userId || n.userId === 'all')
+      .forEach(n => { if (!n.deletedBy.includes(userId)) n.deletedBy.push(userId); });
+  }
+
+  /**
+   * Get analytics
+   */
+  getAnalytics() {
+    const byType = {};
+    this.notifications.forEach(n => {
+      byType[n.type] = (byType[n.type] || 0) + 1;
+    });
+    return {
+      total: this.notifications.length,
+      totalRead: this.notifications.filter(n => n.read).length,
+      byType
+    };
+  }
+
+  /**
+   * Keep only the most recent maxPerUser notifications per user
+   */
+  _pruneUser(userId) {
+    const userNotifs = this.notifications.filter(n => n.userId === userId);
+    if (userNotifs.length > this.maxPerUser) {
+      userNotifs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+      const toRemove = userNotifs.slice(0, userNotifs.length - this.maxPerUser).map(n => n.id);
+      this.notifications = this.notifications.filter(n => !toRemove.includes(n.id));
+    }
+  }
+}
+
+// MongoDB adapter stub — replace body with real Mongoose queries
+class MongoNotificationStore extends NotificationStore {
+  constructor(mongoUri) {
+    super();
+    this.mongoUri = mongoUri;
+    // this.model = require('./models/Notification');
+    console.log('[NotificationStore] MongoDB mode — implement model queries');
+  }
+  // Override methods with async Mongoose equivalents:
+  // async create(data) { return await this.model.create(data); }
+  // async getForUser(userId, opts) { return await this.model.find({...}).sort(...).limit(...); }
+  // etc.
+}
+
+module.exports = { NotificationStore, MongoNotificationStore };
