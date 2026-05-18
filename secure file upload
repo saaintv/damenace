@@ -1,0 +1,19 @@
+export const validateUpload = (
+  req,
+  res,
+  next
+) => {
+  const allowed = [
+    "image/png",
+    "image/jpeg",
+    "image/webp"
+  ];
+
+  if (!allowed.includes(req.file.mimetype)) {
+    return res.status(400).json({
+      error: "Invalid file"
+    });
+  }
+
+  next();
+};
