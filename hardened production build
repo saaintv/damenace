@@ -1,0 +1,23 @@
+
+MENACE 2 SOCIETY — HARDENED PRODUCTION BUILD
+
+MAJOR FIXES INCLUDED
+- Removed duplicate Firebase initialization
+- Added centralized API layer
+- Added JWT auth middleware
+- Added Helmet security
+- Added rate limiting
+- Added Socket.IO singleton
+- Added upload validation
+- Added error boundary
+- Added Zustand state management
+- Added request timeout protection
+- Added environment config separation
+- Added realtime presence system
+- Added lazy loading support
+- Added worker structure
+
+STARTUP
+npm install
+npm run dev
+npm run server
