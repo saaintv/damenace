@@ -1,0 +1,2079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MENACE 2 SOCIETY — UNIVERSE</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Montserrat:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;0,900;1,300;1,400&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"/>
+  
+  <!-- Three.js for 3D -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  
+  <!-- Icon Library -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  
+  <style>
+    /* ═══════════════════════════════════════════════════════════════
+       DESIGN TOKENS — SINGLE SOURCE OF TRUTH
+       ═══════════════════════════════════════════════════════════════ */
+    :root {
+      /* Core Palette */
+      --ink:        #030205;
+      --ink-2:      #07040c;
+      --ink-3:      #0e0915;
+      --ink-4:      #16101f;
+      --surface:    #1c1428;
+      --surface-2:  #241c32;
+      --surface-3:  #2c243c;
+
+      /* Accent System */
+      --red:        #c8001a;
+      --red-2:      #e8001e;
+      --red-3:      #ff1e38;
+      --red-glow:   rgba(200,0,26,.16);
+      --red-dim:    rgba(200,0,26,.07);
+
+      /* Secondary Accents */
+      --gold:       #c07828;
+      --gold-2:     #d89040;
+      --gold-3:     #f0b060;
+      --silver:     #8090a0;
+      --silver-2:   #b0c0d0;
+
+      /* Text Hierarchy */
+      --text:       #f0e8f5;
+      --text-2:     #b8a8c8;
+      --text-3:     #7860a0;
+      --text-4:     #3c2c54;
+
+      /* Borders */
+      --b:          rgba(200,0,26,.12);
+      --b-2:        rgba(200,0,26,.24);
+      --b-3:        rgba(200,0,26,.44);
+
+      /* Status */
+      --ok:         #1aaa4a;
+      --warn:       #d08020;
+      --info:       #4a80e0;
+
+      /* Spacing */
+      --r:          2px;
+      --gap-sm:     8px;
+      --gap-md:     16px;
+      --gap-lg:     24px;
+      --gap-xl:     40px;
+
+      /* Typography */
+      --display:    'Anton', sans-serif;
+      --heading:    'Bebas Neue', sans-serif;
+      --body:       'Montserrat', sans-serif;
+      --mono:       'Space Mono', monospace;
+
+      /* Transitions */
+      --ease:       cubic-bezier(.25,.46,.45,.94);
+      --spring:     cubic-bezier(.34,1.56,.64,1);
+
+      /* Z-index Scale */
+      --z-base:     1;
+      --z-nav:      800;
+      --z-drawer:   900;
+      --z-modal:    1000;
+      --z-toast:    2000;
+      --z-grain:    9999;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       RESET & BASE
+       ═══════════════════════════════════════════════════════════════ */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    html {
+      font-size: 15px;
+      scroll-behavior: smooth;
+      height: 100%;
+    }
+
+    body {
+      background: var(--ink);
+      color: var(--text);
+      font-family: var(--body);
+      overflow-x: hidden;
+      min-height: 100vh;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Atmospheric background */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 70% 50% at 85% 5%, rgba(200,0,26,.06) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 70% at 5% 90%, rgba(192,120,40,.04) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 40% at 50% 50%, rgba(100,50,160,.03) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Film grain */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: var(--z-grain);
+      opacity: 0.38;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.88' numOctaves='4' result='noise'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.4'/%3E%3C/svg%3E");
+      mix-blend-mode: overlay;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-track { background: var(--ink-2); }
+    ::-webkit-scrollbar-thumb { background: var(--red); border-radius: 2px; }
+
+    /* Selection */
+    ::selection { background: var(--red); color: white; }
+
+    /* ═══════════════════════════════════════════════════════════════
+       LAYOUT SYSTEM
+       ═══════════════════════════════════════════════════════════════ */
+    .app-wrapper {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .app-content {
+      flex: 1;
+      position: relative;
+      z-index: var(--z-base);
+      margin-top: 64px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       NAVIGATION
+       ═══════════════════════════════════════════════════════════════ */
+    .nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      z-index: var(--z-nav);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 5%;
+      background: rgba(3,2,5,.92);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--b);
+      transition: background 0.3s var(--ease);
+    }
+
+    .nav-logo {
+      font-family: var(--display);
+      font-size: 1.4rem;
+      letter-spacing: 5px;
+      color: var(--text);
+      cursor: pointer;
+      flex-shrink: 0;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-logo span {
+      color: var(--red-2);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      list-style: none;
+    }
+
+    .nav-link {
+      padding: 0 14px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      font-size: 0.66rem;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--text-3);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+      white-space: nowrap;
+      background: none;
+      border: none;
+      font-family: var(--body);
+    }
+
+    .nav-link:hover {
+      color: var(--text-2);
+    }
+
+    .nav-link.active {
+      color: var(--text);
+      border-bottom-color: var(--red);
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .nav-icon {
+      width: 38px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: 1px solid var(--b);
+      color: var(--text-3);
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: 0.2s;
+      position: relative;
+    }
+
+    .nav-icon:hover {
+      border-color: var(--b-2);
+      color: var(--text-2);
+    }
+
+    .cart-btn {
+      padding: 0 14px;
+      height: 38px;
+      background: none;
+      border: 1px solid var(--b-2);
+      color: var(--text);
+      font-family: var(--body);
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .cart-btn:hover {
+      border-color: var(--red);
+      color: var(--red-2);
+    }
+
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+      cursor: pointer;
+      padding: 8px;
+      background: none;
+      border: none;
+    }
+
+    .hamburger span {
+      width: 22px;
+      height: 1.5px;
+      background: var(--text-2);
+      transition: 0.3s;
+      display: block;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       PAGE SYSTEM
+       ═══════════════════════════════════════════════════════════════ */
+    .page {
+      display: none;
+      min-height: 100vh;
+      position: relative;
+      z-index: var(--z-base);
+      width: 100%;
+      animation: pageIn 0.4s var(--ease);
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    @keyframes pageIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       UTILITY CLASSES
+       ═══════════════════════════════════════════════════════════════ */
+    .section {
+      padding: 100px 5%;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .section-sm {
+      padding: 60px 5%;
+    }
+
+    .section-alt {
+      background: var(--ink-2);
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 5%;
+    }
+
+    .eyebrow {
+      font-size: 0.6rem;
+      letter-spacing: 6px;
+      color: var(--red-2);
+      text-transform: uppercase;
+      display: block;
+      margin-bottom: 10px;
+    }
+
+    .display-title {
+      font-family: var(--display);
+      font-size: clamp(2.5rem, 6vw, 5rem);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      line-height: 0.92;
+      margin-bottom: 50px;
+    }
+
+    .display-title span {
+      color: var(--red-2);
+    }
+
+    .text-center { text-align: center; }
+    .text-left { text-align: left; }
+    .text-right { text-align: right; }
+
+    /* Grid Systems */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap-lg); }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap-lg); }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap-md); }
+    .grid-auto { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--gap-lg); }
+
+    /* Flexbox Utilities */
+    .flex { display: flex; }
+    .flex-col { display: flex; flex-direction: column; }
+    .flex-center { display: flex; align-items: center; justify-content: center; }
+    .flex-between { display: flex; align-items: center; justify-content: space-between; }
+    .gap-sm { gap: var(--gap-sm); }
+    .gap-md { gap: var(--gap-md); }
+    .gap-lg { gap: var(--gap-lg); }
+
+    /* ═══════════════════════════════════════════════════════════════
+       BUTTONS
+       ═══════════════════════════════════════════════════════════════ */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 13px 28px;
+      font-family: var(--body);
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: 0.22s var(--ease);
+      border: none;
+      text-decoration: none;
+      border-radius: var(--r);
+    }
+
+    .btn-primary {
+      background: var(--red);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--red-2);
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--b-2);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--red);
+      color: var(--red-2);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,.16);
+    }
+
+    .btn-ghost:hover {
+      border-color: var(--red);
+      color: var(--red-2);
+    }
+
+    .btn-gold {
+      background: var(--gold);
+      color: var(--ink);
+      font-weight: 900;
+    }
+
+    .btn-gold:hover {
+      background: var(--gold-2);
+    }
+
+    .btn-sm {
+      padding: 9px 18px;
+      font-size: 0.6rem;
+      letter-spacing: 1.5px;
+    }
+
+    .btn-xs {
+      padding: 6px 12px;
+      font-size: 0.58rem;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       HERO SECTION
+       ═══════════════════════════════════════════════════════════════ */
+    .hero {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(rgba(3,2,5,.5), rgba(3,2,5,.7)),
+        url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600"%3E%3Crect fill="%23030205" width="1200" height="600"/%3E%3C/svg%3E') center/cover;
+      z-index: 0;
+    }
+
+    .hero-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(100px);
+      pointer-events: none;
+      animation: orbFloat 10s ease-in-out infinite;
+    }
+
+    .hero-orb-1 {
+      width: 600px;
+      height: 600px;
+      background: rgba(200,0,26,.1);
+      top: -15%;
+      right: -10%;
+    }
+
+    .hero-orb-2 {
+      width: 400px;
+      height: 400px;
+      background: rgba(192,120,40,.06);
+      bottom: -10%;
+      left: -5%;
+      animation-delay: -4s;
+    }
+
+    @keyframes orbFloat {
+      0%, 100% { transform: translate(0,0) scale(1); }
+      33% { transform: translate(-20px,15px) scale(1.05); }
+      66% { transform: translate(15px,-10px) scale(.97); }
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      padding: 20px;
+      animation: heroReveal 1.2s var(--ease) both;
+    }
+
+    @keyframes heroReveal {
+      from {
+        opacity: 0;
+        transform: translateY(50px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .hero-kicker {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 5px;
+      color: var(--red-2);
+      text-transform: uppercase;
+      display: block;
+      margin-bottom: 22px;
+      animation: heroReveal 1.2s 0.15s var(--ease) both;
+    }
+
+    .hero-h1 {
+      font-family: var(--display);
+      font-size: clamp(3.5rem, 12vw, 9rem);
+      line-height: 0.88;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      animation: heroReveal 1.2s 0.2s var(--ease) both;
+    }
+
+    .hero-h1 .line-red {
+      color: var(--red-2);
+      display: block;
+    }
+
+    .hero-sub {
+      margin-top: 26px;
+      font-size: 0.76rem;
+      letter-spacing: 4px;
+      color: var(--text-3);
+      text-transform: uppercase;
+      animation: heroReveal 1.2s 0.35s var(--ease) both;
+    }
+
+    .hero-btns {
+      margin-top: 44px;
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      animation: heroReveal 1.2s 0.5s var(--ease) both;
+    }
+
+    .scroll-cue {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-4);
+      font-size: 0.58rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      animation: scrollBob 2.5s ease-in-out infinite;
+    }
+
+    .scroll-cue::before {
+      content: '';
+      width: 1px;
+      height: 36px;
+      background: linear-gradient(var(--red), transparent);
+    }
+
+    @keyframes scrollBob {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(8px); }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       TICKER
+       ═══════════════════════════════════════════════════════════════ */
+    .ticker {
+      background: var(--red);
+      padding: 11px 0;
+      overflow: hidden;
+      white-space: nowrap;
+      position: relative;
+      z-index: 2;
+    }
+
+    .ticker-track {
+      display: inline-flex;
+      animation: tickerScroll 24s linear infinite;
+    }
+
+    .ticker-item {
+      font-family: var(--display);
+      font-size: 0.8rem;
+      letter-spacing: 4px;
+      margin: 0 24px;
+      opacity: 0.9;
+    }
+
+    @keyframes tickerScroll {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50%); }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       PRODUCT CARD
+       ═══════════════════════════════════════════════════════════════ */
+    .product-card {
+      background: var(--ink-3);
+      border: 1px solid var(--b);
+      overflow: hidden;
+      cursor: pointer;
+      transition: border-color 0.25s, transform 0.25s;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      border-radius: var(--r);
+    }
+
+    .product-card:hover {
+      border-color: var(--b-2);
+      transform: translateY(-4px);
+    }
+
+    .product-img-wrap {
+      position: relative;
+      overflow: hidden;
+      aspect-ratio: 1;
+      background: var(--surface);
+    }
+
+    .product-img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.55s var(--ease);
+    }
+
+    .product-card:hover .product-img-wrap img {
+      transform: scale(1.04);
+    }
+
+    .product-badge {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      padding: 3px 9px;
+      font-size: 0.56rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      border-radius: var(--r);
+    }
+
+    .badge-new { background: var(--gold); color: var(--ink); }
+    .badge-low { background: rgba(208,128,32,.85); color: white; }
+    .badge-sold { background: rgba(0,0,0,.7); color: var(--text-3); border: 1px solid var(--b); }
+
+    .product-colors {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      display: flex;
+      gap: 5px;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: 0.2s;
+    }
+
+    .product-card:hover .product-colors {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .color-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,.25);
+      cursor: pointer;
+      transition: 0.15s;
+    }
+
+    .color-dot:hover {
+      transform: scale(1.3);
+      border-color: white;
+    }
+
+    .color-dot.selected {
+      border-color: white;
+    }
+
+    .product-body {
+      padding: 18px 20px 22px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .product-collection {
+      font-size: 0.58rem;
+      letter-spacing: 3px;
+      color: var(--red);
+      text-transform: uppercase;
+    }
+
+    .product-name {
+      font-family: var(--heading);
+      font-size: 1.3rem;
+      letter-spacing: 2px;
+      line-height: 1.1;
+    }
+
+    .product-desc {
+      font-size: 0.7rem;
+      color: var(--text-3);
+      line-height: 1.55;
+      flex: 1;
+    }
+
+    .product-price-row {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .product-price {
+      font-family: var(--display);
+      font-size: 1.25rem;
+    }
+
+    .product-price-orig {
+      font-size: 0.82rem;
+      color: var(--text-4);
+      text-decoration: line-through;
+    }
+
+    .product-price-save {
+      font-size: 0.6rem;
+      font-weight: 700;
+      color: var(--gold-3);
+      letter-spacing: 1px;
+    }
+
+    .product-stock {
+      font-size: 0.58rem;
+      letter-spacing: 2px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: var(--r);
+      display: inline-block;
+      width: fit-content;
+    }
+
+    .stock-ok { background: rgba(26,170,74,.12); color: #44e88a; border: 1px solid rgba(26,170,74,.25); }
+    .stock-low { background: rgba(208,128,32,.12); color: var(--gold-3); border: 1px solid rgba(208,128,32,.25); }
+    .stock-out { background: rgba(200,0,26,.08); color: var(--red-3); border: 1px solid var(--b); }
+
+    .product-add {
+      margin-top: 10px;
+      padding: 11px;
+      background: var(--red);
+      border: none;
+      color: white;
+      font-family: var(--body);
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: 0.2s;
+      width: 100%;
+      border-radius: var(--r);
+    }
+
+    .product-add:hover {
+      background: var(--red-2);
+    }
+
+    .product-add:disabled {
+      background: var(--surface-2);
+      color: var(--text-4);
+      cursor: not-allowed;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       SHOP TOOLBAR
+       ═══════════════════════════════════════════════════════════════ */
+    .shop-toolbar {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 36px;
+      flex-wrap: wrap;
+      gap: var(--gap-lg);
+      padding-bottom: 22px;
+      border-bottom: 1px solid var(--b);
+    }
+
+    .collection-tabs {
+      display: flex;
+      gap: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .collection-tabs::-webkit-scrollbar {
+      display: none;
+    }
+
+    .coll-tab {
+      padding: 8px 16px;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-3);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: 0.18s;
+      white-space: nowrap;
+      background: none;
+      border: none;
+      font-family: var(--body);
+    }
+
+    .coll-tab:hover {
+      color: var(--text-2);
+    }
+
+    .coll-tab.active {
+      color: var(--red-2);
+      border-bottom-color: var(--red);
+    }
+
+    .sort-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .sort-select {
+      background: var(--surface);
+      border: 1px solid var(--b);
+      color: var(--text-2);
+      padding: 8px 12px;
+      font-family: var(--body);
+      font-size: 0.68rem;
+      cursor: pointer;
+      border-radius: var(--r);
+    }
+
+    .sort-select:focus {
+      outline: none;
+      border-color: var(--b-2);
+    }
+
+    .results-count {
+      font-size: 0.65rem;
+      letter-spacing: 2px;
+      color: var(--text-3);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       FORM ELEMENTS
+       ═══════════════════════════════════════════════════════════════ */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      font-size: 0.6rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--text-3);
+    }
+
+    .form-input,
+    .form-textarea,
+    .form-select {
+      background: var(--ink-3);
+      border: 1px solid var(--b);
+      color: var(--text);
+      padding: 11px 14px;
+      font-family: var(--body);
+      font-size: 0.82rem;
+      width: 100%;
+      transition: border-color 0.2s;
+      border-radius: var(--r);
+    }
+
+    .form-input:focus,
+    .form-textarea:focus,
+    .form-select:focus {
+      outline: none;
+      border-color: var(--b-2);
+    }
+
+    .form-input::placeholder,
+    .form-textarea::placeholder {
+      color: var(--text-4);
+    }
+
+    .form-textarea {
+      resize: vertical;
+      min-height: 90px;
+      line-height: 1.6;
+    }
+
+    .form-select {
+      cursor: pointer;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       ADMIN DASHBOARD
+       ═══════════════════════════════════════════════════════════════ */
+    .admin-grid {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .admin-sidebar {
+      position: sticky;
+      top: 84px;
+      max-height: calc(100vh - 100px);
+      overflow-y: auto;
+    }
+
+    .admin-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text-3);
+      cursor: pointer;
+      border-left: 2px solid transparent;
+      transition: 0.15s;
+      background: none;
+      border: none;
+      font-family: var(--body);
+      width: 100%;
+      text-align: left;
+    }
+
+    .admin-nav-item:hover {
+      color: var(--text-2);
+      background: var(--red-dim);
+    }
+
+    .admin-nav-item.active {
+      color: var(--red-2);
+      border-left-color: var(--red);
+      background: var(--red-dim);
+    }
+
+    .admin-panel {
+      display: none;
+    }
+
+    .admin-panel.active {
+      display: block;
+    }
+
+    /* Stats */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--b);
+      padding: 18px 20px;
+      position: relative;
+      overflow: hidden;
+      border-radius: var(--r);
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--c, var(--red));
+    }
+
+    .stat-label {
+      font-size: 0.58rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--text-3);
+      margin-bottom: 5px;
+    }
+
+    .stat-value {
+      font-family: var(--display);
+      font-size: 2rem;
+      letter-spacing: 2px;
+    }
+
+    .stat-value.red { color: var(--red-2); }
+    .stat-value.gold { color: var(--gold-2); }
+    .stat-value.green { color: #44e88a; }
+
+    /* Data Table */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.74rem;
+    }
+
+    .data-table th {
+      text-align: left;
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--b);
+      font-size: 0.58rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-4);
+      white-space: nowrap;
+    }
+
+    .data-table td {
+      padding: 11px 14px;
+      border-bottom: 1px solid rgba(255,255,255,.03);
+      vertical-align: middle;
+    }
+
+    .data-table tr:hover td {
+      background: var(--red-dim);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       UPLOAD ZONE
+       ═══════════════════════════════════════════════════════════════ */
+    .upload-zone {
+      border: 1.5px dashed var(--b-2);
+      padding: 36px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: 0.25s;
+      background: var(--surface);
+      border-radius: var(--r);
+    }
+
+    .upload-zone:hover,
+    .upload-zone.drag {
+      border-color: var(--red-2);
+      background: var(--red-dim);
+    }
+
+    .upload-zone-icon {
+      font-size: 2.4rem;
+      display: block;
+      margin-bottom: 10px;
+    }
+
+    .upload-zone-title {
+      font-family: var(--heading);
+      font-size: 1.3rem;
+      letter-spacing: 2px;
+      margin-bottom: 6px;
+    }
+
+    .upload-zone-sub {
+      font-size: 0.7rem;
+      color: var(--text-3);
+      line-height: 1.6;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       FOOTER
+       ═══════════════════════════════════════════════════════════════ */
+    .footer {
+      background: var(--ink-2);
+      border-top: 1px solid var(--b);
+      padding: 40px 5%;
+      margin-top: 60px;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 40px;
+      max-width: 1400px;
+      margin: 0 auto;
+      margin-bottom: 40px;
+    }
+
+    .footer-col h4 {
+      font-family: var(--heading);
+      font-size: 1.1rem;
+      letter-spacing: 2px;
+      margin-bottom: 16px;
+      color: var(--red-2);
+    }
+
+    .footer-col a {
+      display: block;
+      font-size: 0.82rem;
+      color: var(--text-3);
+      text-decoration: none;
+      margin-bottom: 8px;
+      transition: 0.2s;
+    }
+
+    .footer-col a:hover {
+      color: var(--red-2);
+    }
+
+    .footer-bottom {
+      text-align: center;
+      padding-top: 20px;
+      border-top: 1px solid var(--b);
+      font-size: 0.7rem;
+      color: var(--text-4);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       RESPONSIVE
+       ═══════════════════════════════════════════════════════════════ */
+    @media (max-width: 768px) {
+      .nav-links {
+        display: none;
+      }
+
+      .hamburger {
+        display: flex;
+      }
+
+      .grid-2,
+      .grid-3,
+      .grid-4 {
+        grid-template-columns: 1fr;
+      }
+
+      .admin-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .admin-sidebar {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        position: static;
+        top: auto;
+        max-height: none;
+      }
+
+      .section {
+        padding: 60px 5%;
+      }
+
+      .hero-h1 {
+        font-size: clamp(2rem, 8vw, 4rem);
+      }
+
+      .display-title {
+        font-size: clamp(1.8rem, 5vw, 3rem);
+      }
+
+      .footer-grid {
+        grid-template-columns: 1fr;
+        gap: 24px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      :root {
+        font-size: 14px;
+      }
+
+      .section {
+        padding: 40px 5%;
+      }
+
+      .hero-btns {
+        flex-direction: column;
+      }
+
+      .btn {
+        width: 100%;
+      }
+
+      .sort-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .shop-toolbar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-wrapper">
+  <!-- ═══════════════════════════════════════════════════════════════
+       NAVIGATION
+       ═══════════════════════════════════════════════════════════════ -->
+  <nav class="nav">
+    <a href="#" class="nav-logo" data-page="home">
+      MENACE<span>2</span>SOCIETY
+    </a>
+
+    <ul class="nav-links">
+      <li><button class="nav-link active" data-page="home">HOME</button></li>
+      <li><button class="nav-link" data-page="shop">SHOP</button></li>
+      <li><button class="nav-link" data-page="comics">COMICS</button></li>
+      <li><button class="nav-link" data-page="ai-lab">AI LAB</button></li>
+      <li><button class="nav-link" data-page="admin">ADMIN</button></li>
+    </ul>
+
+    <div class="nav-right">
+      <button class="nav-icon" id="notif-icon" title="Notifications">
+        <i class="fas fa-bell"></i>
+      </button>
+      <button class="nav-icon" id="search-icon" title="Search">
+        <i class="fas fa-search"></i>
+      </button>
+      <button class="cart-btn" id="cart-btn">
+        <i class="fas fa-shopping-bag"></i>
+        <span id="cart-count">0</span>
+      </button>
+      <button class="hamburger" id="hamburger">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="app-content">
+    <!-- ═══════════════════════════════════════════════════════════════
+         HOME PAGE
+         ═══════════════════════════════════════════════════════════════ -->
+    <div id="page-home" class="page active">
+      <!-- Hero -->
+      <div class="hero">
+        <div class="hero-bg"></div>
+        <div class="hero-orb hero-orb-1"></div>
+        <div class="hero-orb hero-orb-2"></div>
+
+        <div class="hero-content">
+          <span class="hero-kicker">WELCOME TO THE CHAOS</span>
+          <h1 class="hero-h1">
+            MENACE<span class="line-red">2</span><span class="line-red">SOCIETY</span>
+          </h1>
+          <p class="hero-sub">COMICS • FASHION • CULTURE</p>
+
+          <div class="hero-btns">
+            <button class="btn btn-primary" data-page="shop">SHOP NOW</button>
+            <button class="btn btn-ghost" data-page="comics">READ COMICS</button>
+          </div>
+        </div>
+
+        <div class="scroll-cue">
+          <span>SCROLL</span>
+        </div>
+      </div>
+
+      <!-- Ticker -->
+      <div class="ticker">
+        <div class="ticker-track">
+          <div class="ticker-item">🔥 ORIGINS VOL.1 LIVE • CHAOS COLLECTION • LIMITED DROPS •</div>
+          <div class="ticker-item">🔥 ORIGINS VOL.1 LIVE • CHAOS COLLECTION • LIMITED DROPS •</div>
+        </div>
+      </div>
+
+      <!-- Featured Section -->
+      <section class="section">
+        <div class="container">
+          <h2 class="display-title">
+            FEATURED <span>DROPS</span>
+          </h2>
+
+          <div class="grid-3">
+            <div class="product-card">
+              <div class="product-img-wrap">
+                <img src="https://via.placeholder.com/300x300?text=Fear+Me+Hoodie" alt="Fear Me Hoodie"/>
+                <span class="product-badge badge-new">NEW</span>
+                <div class="product-colors">
+                  <div class="color-dot selected" style="background: #000;"></div>
+                  <div class="color-dot" style="background: #c8001a;"></div>
+                </div>
+              </div>
+              <div class="product-body">
+                <span class="product-collection">CHAOS COLLECTION</span>
+                <h3 class="product-name">Fear Me Hoodie</h3>
+                <p class="product-desc">Premium heavyweight hoodie with embroidered graphics.</p>
+                <div class="product-price-row">
+                  <span class="product-price">$89.99</span>
+                  <span class="product-stock stock-ok">12 IN STOCK</span>
+                </div>
+                <button class="product-add">ADD TO CART</button>
+              </div>
+            </div>
+
+            <div class="product-card">
+              <div class="product-img-wrap">
+                <img src="https://via.placeholder.com/300x300?text=Chaos+Denim" alt="Chaos Denim"/>
+                <span class="product-badge badge-low">LOW STOCK</span>
+              </div>
+              <div class="product-body">
+                <span class="product-collection">ORIGINS</span>
+                <h3 class="product-name">Chaos Denim Jacket</h3>
+                <p class="product-desc">Distressed denim with hand-stitched patches.</p>
+                <div class="product-price-row">
+                  <span class="product-price">$129.99</span>
+                  <span class="product-stock stock-low">3 IN STOCK</span>
+                </div>
+                <button class="product-add">ADD TO CART</button>
+              </div>
+            </div>
+
+            <div class="product-card">
+              <div class="product-img-wrap">
+                <img src="https://via.placeholder.com/300x300?text=Menace+Tee" alt="Menace Tee"/>
+                <span class="product-badge badge-sold">SOLD OUT</span>
+              </div>
+              <div class="product-body">
+                <span class="product-collection">CLASSIC</span>
+                <h3 class="product-name">Menace Tee Classic</h3>
+                <p class="product-desc">Signature graphic tee. Premium cotton blend.</p>
+                <div class="product-price-row">
+                  <span class="product-price">$34.99</span>
+                  <span class="product-stock stock-out">SOLD OUT</span>
+                </div>
+                <button class="product-add" disabled>NOTIFY ME</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         SHOP PAGE
+         ═══════════════════════════════════════════════════════════════ -->
+    <div id="page-shop" class="page">
+      <section class="section">
+        <div class="container">
+          <h1 class="display-title">SHOP</h1>
+
+          <div class="shop-toolbar">
+            <div class="collection-tabs">
+              <button class="coll-tab active">ALL</button>
+              <button class="coll-tab">HOODIES</button>
+              <button class="coll-tab">TEES</button>
+              <button class="coll-tab">JACKETS</button>
+              <button class="coll-tab">ACCESSORIES</button>
+            </div>
+
+            <div class="sort-row">
+              <label for="sort-select" style="font-size: 0.7rem; color: var(--text-3);">SORT:</label>
+              <select id="sort-select" class="sort-select">
+                <option>NEWEST</option>
+                <option>PRICE: LOW TO HIGH</option>
+                <option>PRICE: HIGH TO LOW</option>
+                <option>TRENDING</option>
+              </select>
+              <span class="results-count">24 Results</span>
+            </div>
+          </div>
+
+          <div class="grid-4">
+            <div class="product-card">
+              <div class="product-img-wrap">
+                <img src="https://via.placeholder.com/300x300?text=Product+1" alt="Product"/>
+              </div>
+              <div class="product-body">
+                <span class="product-collection">COLLECTION</span>
+                <h3 class="product-name">Product Name</h3>
+                <div class="product-price-row">
+                  <span class="product-price">$49.99</span>
+                  <span class="product-stock stock-ok">IN STOCK</span>
+                </div>
+                <button class="product-add">ADD TO CART</button>
+              </div>
+            </div>
+
+            <div class="product-card">
+              <div class="product-img-wrap">
+                <img src="https://via.placeholder.com/300x300?text=Product+2" alt="Product"/>
+              </div>
+              <div class="product-body">
+                <span class="product-collection">COLLECTION</span>
+                <h3 class="product-name">Product Name</h3>
+                <div class="product-price-row">
+                  <span class="product-price">$59.99</span>
+                  <span class="product-stock stock-ok">IN STOCK</span>
+                </div>
+                <button class="product-add">ADD TO CART</button>
+              </div>
+            </div>
+
+            <div class="product-card">
+              <div class="product-img-wrap">
+                <img src="https://via.placeholder.com/300x300?text=Product+3" alt="Product"/>
+              </div>
+              <div class="product-body">
+                <span class="product-collection">COLLECTION</span>
+                <h3 class="product-name">Product Name</h3>
+                <div class="product-price-row">
+                  <span class="product-price">$44.99</span>
+                  <span class="product-stock stock-low">2 LEFT</span>
+                </div>
+                <button class="product-add">ADD TO CART</button>
+              </div>
+            </div>
+
+            <div class="product-card">
+              <div class="product-img-wrap">
+                <img src="https://via.placeholder.com/300x300?text=Product+4" alt="Product"/>
+              </div>
+              <div class="product-body">
+                <span class="product-collection">COLLECTION</span>
+                <h3 class="product-name">Product Name</h3>
+                <div class="product-price-row">
+                  <span class="product-price">$39.99</span>
+                  <span class="product-stock stock-ok">IN STOCK</span>
+                </div>
+                <button class="product-add">ADD TO CART</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         COMICS PAGE
+         ═══════════════════════════════════════════════════════════════ -->
+    <div id="page-comics" class="page">
+      <section class="section">
+        <div class="container">
+          <h1 class="display-title">COMICS</h1>
+
+          <div class="grid-3">
+            <div class="product-card">
+              <div class="product-img-wrap">
+                <img src="https://via.placeholder.com/300x400?text=Comic+Vol.1" alt="Comic"/>
+                <span class="product-badge badge-new">NEW</span>
+              </div>
+              <div class="product-body">
+                <span class="product-collection">SERIES</span>
+                <h3 class="product-name">Origins Vol. 1</h3>
+                <p class="product-desc">The beginning of the chaos. The first chapter of the Menace universe.</p>
+                <button class="btn btn-primary">READ NOW</button>
+              </div>
+            </div>
+
+            <div class="product-card">
+              <div class="product-img-wrap">
+                <img src="https://via.placeholder.com/300x400?text=Comic+Vol.2" alt="Comic"/>
+              </div>
+              <div class="product-body">
+                <span class="product-collection">SERIES</span>
+                <h3 class="product-name">Chaos Rising Vol. 2</h3>
+                <p class="product-desc">The plot thickens. New characters emerge from the shadows.</p>
+                <button class="btn btn-primary">READ NOW</button>
+              </div>
+            </div>
+
+            <div class="product-card">
+              <div class="product-img-wrap">
+                <img src="https://via.placeholder.com/300x400?text=Comic+Vol.3" alt="Comic"/>
+              </div>
+              <div class="product-body">
+                <span class="product-collection">SERIES</span>
+                <h3 class="product-name">Fury Unleashed Vol. 3</h3>
+                <p class="product-desc">The climax approaches. All forces converge for the final battle.</p>
+                <button class="btn btn-primary">READ NOW</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         AI LAB PAGE
+         ═══════════════════════════════════════════════════════════════ -->
+    <div id="page-ai-lab" class="page">
+      <section class="section">
+        <div class="container">
+          <h1 class="display-title">AI <span>LAB</span></h1>
+
+          <div class="grid-2">
+            <div>
+              <h3 style="font-family: var(--heading); font-size: 1.5rem; margin-bottom: 20px;">
+                IMAGE GENERATOR
+              </h3>
+
+              <div class="form-group">
+                <label class="form-label">Describe Your Image</label>
+                <textarea class="form-textarea" placeholder="A menace character standing in the rain, cyberpunk style..."></textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Style</label>
+                <select class="form-select">
+                  <option>Cinematic</option>
+                  <option>Comic Book</option>
+                  <option>Anime</option>
+                  <option>Oil Painting</option>
+                  <option>Digital Art</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Quality</label>
+                <select class="form-select">
+                  <option>Standard</option>
+                  <option>High</option>
+                  <option>Ultra</option>
+                </select>
+              </div>
+
+              <button class="btn btn-primary" style="width: 100%;">
+                <i class="fas fa-wand-magic-sparkles"></i>
+                GENERATE
+              </button>
+            </div>
+
+            <div>
+              <h3 style="font-family: var(--heading); font-size: 1.5rem; margin-bottom: 20px;">
+                PREVIEW
+              </h3>
+              <div style="background: var(--surface); border: 1px solid var(--b); aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: var(--r);">
+                <div style="text-align: center; color: var(--text-4);">
+                  <i class="fas fa-image" style="font-size: 3rem; display: block; margin-bottom: 10px;"></i>
+                  Generate an image to see preview
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         ADMIN PAGE
+         ════════════════��══════════════════════════════════════════════ -->
+    <div id="page-admin" class="page">
+      <section class="section">
+        <div class="container">
+          <h1 class="display-title">ADMIN</h1>
+
+          <div class="admin-grid">
+            <!-- Sidebar -->
+            <div class="admin-sidebar">
+              <button class="admin-nav-item active" data-panel="dashboard">
+                <i class="fas fa-chart-line"></i>
+                DASHBOARD
+              </button>
+              <button class="admin-nav-item" data-panel="products">
+                <i class="fas fa-box"></i>
+                PRODUCTS
+              </button>
+              <button class="admin-nav-item" data-panel="inventory">
+                <i class="fas fa-warehouse"></i>
+                INVENTORY
+              </button>
+              <button class="admin-nav-item" data-panel="orders">
+                <i class="fas fa-receipt"></i>
+                ORDERS
+              </button>
+              <button class="admin-nav-item" data-panel="uploads">
+                <i class="fas fa-cloud-upload"></i>
+                UPLOADS
+              </button>
+            </div>
+
+            <!-- Content -->
+            <div>
+              <!-- Dashboard Panel -->
+              <div class="admin-panel active" data-panel="dashboard">
+                <h2 style="font-family: var(--heading); font-size: 1.8rem; margin-bottom: 30px;">
+                  DASHBOARD
+                </h2>
+
+                <div class="stat-grid">
+                  <div class="stat-card">
+                    <div class="stat-label">Total Sales</div>
+                    <div class="stat-value red">$12,450</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-label">Orders</div>
+                    <div class="stat-value red">234</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-label">Products</div>
+                    <div class="stat-value gold">48</div>
+                  </div>
+                  <div class="stat-card">
+                    <div class="stat-label">Visitors</div>
+                    <div class="stat-value green">5,234</div>
+                  </div>
+                </div>
+
+                <h3 style="font-family: var(--heading); font-size: 1.3rem; margin-top: 30px; margin-bottom: 15px;">
+                  Recent Orders
+                </h3>
+
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>ORDER ID</th>
+                      <th>CUSTOMER</th>
+                      <th>AMOUNT</th>
+                      <th>STATUS</th>
+                      <th>DATE</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>#M2S-001</td>
+                      <td>John Doe</td>
+                      <td>$129.99</td>
+                      <td><span class="product-stock stock-ok">SHIPPED</span></td>
+                      <td>2026-05-18</td>
+                    </tr>
+                    <tr>
+                      <td>#M2S-002</td>
+                      <td>Jane Smith</td>
+                      <td>$89.99</td>
+                      <td><span class="product-stock stock-ok">PROCESSING</span></td>
+                      <td>2026-05-17</td>
+                    </tr>
+                    <tr>
+                      <td>#M2S-003</td>
+                      <td>Alex Chen</td>
+                      <td>$249.99</td>
+                      <td><span class="product-stock stock-low">PENDING</span></td>
+                      <td>2026-05-16</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Products Panel -->
+              <div class="admin-panel" data-panel="products">
+                <h2 style="font-family: var(--heading); font-size: 1.8rem; margin-bottom: 30px;">
+                  MANAGE PRODUCTS
+                </h2>
+
+                <button class="btn btn-primary" style="margin-bottom: 20px;">
+                  <i class="fas fa-plus"></i>
+                  NEW PRODUCT
+                </button>
+
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>PRODUCT NAME</th>
+                      <th>PRICE</th>
+                      <th>STOCK</th>
+                      <th>ACTIONS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Fear Me Hoodie</td>
+                      <td>$89.99</td>
+                      <td>12</td>
+                      <td>
+                        <button class="btn btn-sm btn-secondary">EDIT</button>
+                        <button class="btn btn-sm btn-secondary">DELETE</button>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>Chaos Denim Jacket</td>
+                      <td>$129.99</td>
+                      <td>3</td>
+                      <td>
+                        <button class="btn btn-sm btn-secondary">EDIT</button>
+                        <button class="btn btn-sm btn-secondary">DELETE</button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Inventory Panel -->
+              <div class="admin-panel" data-panel="inventory">
+                <h2 style="font-family: var(--heading); font-size: 1.8rem; margin-bottom: 30px;">
+                  INVENTORY MANAGEMENT
+                </h2>
+
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>PRODUCT</th>
+                      <th>SIZE</th>
+                      <th>QUANTITY</th>
+                      <th>STATUS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Fear Me Hoodie</td>
+                      <td>S, M, L, XL</td>
+                      <td>12</td>
+                      <td><span class="product-stock stock-ok">IN STOCK</span></td>
+                    </tr>
+                    <tr>
+                      <td>Chaos Denim Jacket</td>
+                      <td>M, L</td>
+                      <td>3</td>
+                      <td><span class="product-stock stock-low">LOW</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Orders Panel -->
+              <div class="admin-panel" data-panel="orders">
+                <h2 style="font-family: var(--heading); font-size: 1.8rem; margin-bottom: 30px;">
+                  ORDERS
+                </h2>
+
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>ORDER ID</th>
+                      <th>CUSTOMER</th>
+                      <th>ITEMS</th>
+                      <th>TOTAL</th>
+                      <th>STATUS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>#M2S-001</td>
+                      <td>John Doe</td>
+                      <td>2</td>
+                      <td>$129.99</td>
+                      <td><span class="product-stock stock-ok">SHIPPED</span></td>
+                    </tr>
+                    <tr>
+                      <td>#M2S-002</td>
+                      <td>Jane Smith</td>
+                      <td>1</td>
+                      <td>$89.99</td>
+                      <td><span class="product-stock stock-ok">PROCESSING</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Uploads Panel -->
+              <div class="admin-panel" data-panel="uploads">
+                <h2 style="font-family: var(--heading); font-size: 1.8rem; margin-bottom: 30px;">
+                  PRODUCT UPLOADER
+                </h2>
+
+                <div class="upload-zone" id="upload-zone">
+                  <div class="upload-zone-icon">📸</div>
+                  <div class="upload-zone-title">Drag & Drop Images Here</div>
+                  <div class="upload-zone-sub">or click to browse files</div>
+                  <input type="file" id="upload-input" style="display: none;" accept="image/*" multiple/>
+                </div>
+
+                <div style="margin-top: 30px;">
+                  <h3 style="font-family: var(--heading); font-size: 1.3rem; margin-bottom: 15px;">
+                    Quick Product Info
+                  </h3>
+
+                  <div class="form-group">
+                    <label class="form-label">Product Name</label>
+                    <input type="text" class="form-input" placeholder="Enter product name"/>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label">Price</label>
+                    <input type="number" class="form-input" placeholder="0.00"/>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label">Collection</label>
+                    <select class="form-select">
+                      <option>CHAOS COLLECTION</option>
+                      <option>ORIGINS</option>
+                      <option>CLASSIC</option>
+                    </select>
+                  </div>
+
+                  <button class="btn btn-primary">
+                    <i class="fas fa-upload"></i>
+                    UPLOAD PRODUCT
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       FOOTER
+       ═══════════════════════════════════════════════════════════════ -->
+  <footer class="footer">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <h4>SHOP</h4>
+        <a href="#">All Products</a>
+        <a href="#">New Arrivals</a>
+        <a href="#">Collections</a>
+        <a href="#">Sale</a>
+      </div>
+      <div class="footer-col">
+        <h4>COMICS</h4>
+        <a href="#">Latest Issues</a>
+        <a href="#">Collections</a>
+        <a href="#">Characters</a>
+        <a href="#">Universe</a>
+      </div>
+      <div class="footer-col">
+        <h4>COMMUNITY</h4>
+        <a href="#">Discord</a>
+        <a href="#">Twitter</a>
+        <a href="#">Instagram</a>
+        <a href="#">TikTok</a>
+      </div>
+      <div class="footer-col">
+        <h4>SUPPORT</h4>
+        <a href="#">Contact</a>
+        <a href="#">FAQ</a>
+        <a href="#">Privacy</a>
+        <a href="#">Terms</a>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>&copy; 2026 MENACE 2 SOCIETY. All Rights Reserved.</p>
+    </div>
+  </footer>
+</div>
+
+<script>
+  // ═══════════════════════════════════════════════════════════════
+  // PAGE NAVIGATION
+  // ═══════════════════════════════════════════════════════════════
+  document.querySelectorAll('[data-page]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const pageId = link.getAttribute('data-page');
+      navigateToPage(pageId);
+    });
+  });
+
+  function navigateToPage(pageId) {
+    // Hide all pages
+    document.querySelectorAll('.page').forEach(page => {
+      page.classList.remove('active');
+    });
+
+    // Show target page
+    const targetPage = document.getElementById(`page-${pageId}`);
+    if (targetPage) {
+      targetPage.classList.add('active');
+    }
+
+    // Update nav links
+    document.querySelectorAll('.nav-link').forEach(link => {
+      link.classList.remove('active');
+    });
+
+    document.querySelector(`[data-page="${pageId}"]`).classList.add('active');
+
+    // Scroll to top
+    window.scrollTo(0, 0);
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // ADMIN PANEL TABS
+  // ═══════════════════════════════════════════════════════════════
+  document.querySelectorAll('.admin-nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const panelId = item.getAttribute('data-panel');
+
+      // Hide all panels
+      document.querySelectorAll('.admin-panel').forEach(panel => {
+        panel.classList.remove('active');
+      });
+
+      // Show target panel
+      document.querySelector(`[data-panel="${panelId}"]`).classList.add('active');
+
+      // Update active nav item
+      document.querySelectorAll('.admin-nav-item').forEach(navItem => {
+        navItem.classList.remove('active');
+      });
+      item.classList.add('active');
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // UPLOAD ZONE
+  // ═══════════════════════════════════════════════════════════════
+  const uploadZone = document.getElementById('upload-zone');
+  const uploadInput = document.getElementById('upload-input');
+
+  if (uploadZone && uploadInput) {
+    uploadZone.addEventListener('click', () => {
+      uploadInput.click();
+    });
+
+    uploadZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadZone.classList.add('drag');
+    });
+
+    uploadZone.addEventListener('dragleave', () => {
+      uploadZone.classList.remove('drag');
+    });
+
+    uploadZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadZone.classList.remove('drag');
+      const files = e.dataTransfer.files;
+      handleFiles(files);
+    });
+
+    uploadInput.addEventListener('change', (e) => {
+      handleFiles(e.target.files);
+    });
+  }
+
+  function handleFiles(files) {
+    Array.from(files).forEach(file => {
+      console.log('File uploaded:', file.name);
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // CART FUNCTIONALITY
+  // ═══════════════════════════════════════════════════════════════
+  let cartCount = 0;
+
+  document.querySelectorAll('.product-add').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (!btn.disabled) {
+        cartCount++;
+        document.getElementById('cart-count').textContent = cartCount;
+        showToast('Added to cart!');
+      }
+    });
+  });
+
+  document.getElementById('cart-btn').addEventListener('click', () => {
+    alert(`Cart items: ${cartCount}`);
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // TOAST NOTIFICATIONS
+  // ═══════════════════════════════════════════════════════════════
+  function showToast(message) {
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: var(--red);
+      color: white;
+      padding: 15px 20px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      z-index: 2000;
+      animation: slideIn 0.3s ease-out;
+    `;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+      toast.style.animation = 'slideOut 0.3s ease-out';
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  }
+
+  // Add animation styles
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideOut {
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+      to {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+
+  // ═══════════════════════════════════════════════════════════════
+  // COLLECTION TAB FILTERING
+  // ═══════════════════════════════════════════════════════════════
+  document.querySelectorAll('.coll-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.coll-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      showToast(`Filtered by: ${tab.textContent}`);
+    });
+  });
+</script>
+
+</body>
+</html>
