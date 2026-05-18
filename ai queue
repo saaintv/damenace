@@ -1,0 +1,3 @@
+setInterval(async () => {
+  console.log("cleaning stale jobs");
+}, 1000 * 60 * 5);
