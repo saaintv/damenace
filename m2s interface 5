@@ -1,0 +1,2478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MENACE 2 SOCIETY — UNIVERSE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Montserrat:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;0,900;1,300;1,400&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   DESIGN TOKENS — single source of truth for all styling
+═══════════════════════════════════════════════════════════════════ */
+:root {
+  /* Core palette */
+  --ink:        #030205;
+  --ink-2:      #07040c;
+  --ink-3:      #0e0915;
+  --ink-4:      #16101f;
+  --surface:    #1c1428;
+  --surface-2:  #241c32;
+  --surface-3:  #2c243c;
+
+  /* Accent system */
+  --red:        #c8001a;
+  --red-2:      #e8001e;
+  --red-3:      #ff1e38;
+  --red-glow:   rgba(200,0,26,.16);
+  --red-dim:    rgba(200,0,26,.07);
+
+  /* Secondary accents */
+  --gold:       #c07828;
+  --gold-2:     #d89040;
+  --gold-3:     #f0b060;
+  --silver:     #8090a0;
+  --silver-2:   #b0c0d0;
+
+  /* Text hierarchy */
+  --text:       #f0e8f5;
+  --text-2:     #b8a8c8;
+  --text-3:     #7860a0;
+  --text-4:     #3c2c54;
+
+  /* Borders */
+  --b:          rgba(200,0,26,.12);
+  --b-2:        rgba(200,0,26,.24);
+  --b-3:        rgba(200,0,26,.44);
+
+  /* Status */
+  --ok:         #1aaa4a;
+  --warn:       #d08020;
+  --info:       #4a80e0;
+
+  /* Radius */
+  --r:          2px;
+
+  /* Type scale */
+  --display:    'Anton', sans-serif;
+  --heading:    'Bebas Neue', sans-serif;
+  --body:       'Montserrat', sans-serif;
+  --mono:       'Space Mono', monospace;
+
+  /* Transitions */
+  --ease:       cubic-bezier(.25,.46,.45,.94);
+  --spring:     cubic-bezier(.34,1.56,.64,1);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   RESET & BASE
+═══════════════════════════════════════════════════════════════════ */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+html { font-size:15px; scroll-behavior:smooth; height:100%; }
+
+body {
+  background: var(--ink);
+  color: var(--text);
+  font-family: var(--body);
+  overflow-x: hidden;
+  min-height: 100vh;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Atmospheric background */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 50% at 85% 5%, rgba(200,0,26,.06) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 70% at 5% 90%, rgba(192,120,40,.04) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 50% 50%, rgba(100,50,160,.03) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Film grain texture */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: .38;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.88' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.04'/%3E%3C/svg%3E");
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: var(--ink-2); }
+::-webkit-scrollbar-thumb { background: var(--red); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   BACKGROUND CANVAS
+═══════════════════════════════════════════════════════════════════ */
+#bg-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  opacity: .18;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════════════════════════════ */
+.nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 64px;
+  z-index: 800;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 5%;
+  background: rgba(3,2,5,.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--b);
+  transition: background .3s;
+}
+
+.nav-logo {
+  font-family: var(--display);
+  font-size: 1.5rem;
+  letter-spacing: 5px;
+  color: var(--text);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.nav-logo span { color: var(--red-2); }
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  list-style: none;
+}
+
+.nav-link {
+  padding: 0 14px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  font-size: .66rem;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--text-3);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color .2s, border-color .2s;
+  white-space: nowrap;
+}
+.nav-link:hover { color: var(--text-2); }
+.nav-link.active { color: var(--text); border-bottom-color: var(--red); }
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.nav-icon {
+  width: 38px; height: 38px;
+  display: flex; align-items: center; justify-content: center;
+  background: none;
+  border: 1px solid var(--b);
+  color: var(--text-3);
+  cursor: pointer;
+  font-size: .95rem;
+  transition: .2s;
+  position: relative;
+}
+.nav-icon:hover { border-color: var(--b-2); color: var(--text-2); }
+
+.notification-badge {
+  position: absolute;
+  top: -4px; right: -4px;
+  background: var(--red);
+  color: white;
+  min-width: 16px; height: 16px;
+  border-radius: 8px;
+  font-size: .52rem;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 3px;
+  border: 2px solid var(--ink);
+  display: none;
+}
+.notification-badge.show { display: flex; }
+
+.cart-btn {
+  padding: 0 14px;
+  height: 38px;
+  background: none;
+  border: 1px solid var(--b-2);
+  color: var(--text);
+  font-family: var(--body);
+  font-size: .66rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: .2s;
+  display: flex; align-items: center; gap: 7px;
+}
+.cart-btn:hover { border-color: var(--red); color: var(--red-2); }
+
+.hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  cursor: pointer;
+  padding: 8px;
+  background: none;
+  border: none;
+}
+.hamburger span {
+  width: 22px; height: 1.5px;
+  background: var(--text-2);
+  transition: .3s;
+  display: block;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   PAGE SYSTEM
+═══════════════════════════════════════════════════════════════════ */
+.page { display: none; min-height: 100vh; position: relative; z-index: 1; }
+.page.active { display: block; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   UTILITY CLASSES
+═══════════════════════════════════════════════════════════════════ */
+.section { padding: 100px 5%; }
+.section-sm { padding: 60px 5%; }
+.section-alt { background: var(--ink-2); }
+
+.eyebrow {
+  font-size: .6rem;
+  letter-spacing: 6px;
+  color: var(--red-2);
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.display-title {
+  font-family: var(--display);
+  font-size: clamp(2.5rem,6vw,5rem);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  line-height: .92;
+  margin-bottom: 50px;
+}
+.display-title span { color: var(--red-2); }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
+.grid-auto { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap: 18px; }
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 13px 28px;
+  font-family: var(--body);
+  font-size: .68rem; font-weight: 700;
+  letter-spacing: 2.5px; text-transform: uppercase;
+  cursor: pointer;
+  transition: .22s var(--ease);
+  border: none; text-decoration: none;
+}
+.btn-primary { background: var(--red); color: white; }
+.btn-primary:hover { background: var(--red-2); transform: translateY(-1px); }
+.btn-ghost { background: transparent; color: var(--text); border: 1px solid rgba(255,255,255,.16); }
+.btn-ghost:hover { border-color: var(--red); color: var(--red-2); }
+.btn-gold { background: var(--gold); color: var(--ink); font-weight: 900; }
+.btn-gold:hover { background: var(--gold-2); }
+.btn-sm { padding: 9px 18px; font-size: .6rem; letter-spacing: 1.5px; }
+.btn-xs { padding: 6px 12px; font-size: .58rem; }
+
+/* Fade-in animation */
+.fade-up {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity .7s var(--ease), transform .7s var(--ease);
+}
+.fade-up.in { opacity: 1; transform: translateY(0); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   HERO
+═══════════════════════════════════════════════════════════════════ */
+.hero {
+  height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  text-align: center;
+  position: relative; overflow: hidden;
+}
+
+.hero-bg {
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(rgba(3,2,5,.5), rgba(3,2,5,.7)),
+    url('https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1600&auto=format&fit=crop') center/cover;
+}
+
+.hero-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  pointer-events: none;
+  animation: orbFloat 10s ease-in-out infinite;
+}
+.hero-orb-1 { width: 600px; height: 600px; background: rgba(200,0,26,.1); top: -15%; right: -10%; }
+.hero-orb-2 { width: 400px; height: 400px; background: rgba(192,120,40,.06); bottom: -10%; left: -5%; animation-delay: -4s; }
+
+@keyframes orbFloat {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33%      { transform: translate(-20px,15px) scale(1.05); }
+  66%      { transform: translate(15px,-10px) scale(.97); }
+}
+
+.hero-content {
+  position: relative; z-index: 2;
+  padding: 20px;
+  animation: heroReveal 1.2s var(--ease) both;
+}
+
+@keyframes heroReveal {
+  from { opacity: 0; transform: translateY(50px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.hero-kicker {
+  font-family: var(--mono);
+  font-size: .65rem;
+  letter-spacing: 5px;
+  color: var(--red-2);
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 22px;
+  animation: heroReveal 1.2s .15s var(--ease) both;
+}
+
+.hero-h1 {
+  font-family: var(--display);
+  font-size: clamp(4.5rem,12vw,11rem);
+  line-height: .88;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  animation: heroReveal 1.2s .2s var(--ease) both;
+}
+.hero-h1 .line-red { color: var(--red-2); display: block; }
+
+.hero-sub {
+  margin-top: 26px;
+  font-size: .76rem;
+  letter-spacing: 4px;
+  color: var(--text-3);
+  text-transform: uppercase;
+  animation: heroReveal 1.2s .35s var(--ease) both;
+}
+
+.hero-btns {
+  margin-top: 44px;
+  display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;
+  animation: heroReveal 1.2s .5s var(--ease) both;
+}
+
+.scroll-cue {
+  position: absolute;
+  bottom: 30px; left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  color: var(--text-4);
+  font-size: .58rem; letter-spacing: 3px; text-transform: uppercase;
+  animation: scrollBob 2.5s ease-in-out infinite;
+}
+.scroll-cue::before {
+  content: '';
+  width: 1px; height: 36px;
+  background: linear-gradient(var(--red), transparent);
+}
+@keyframes scrollBob {
+  0%,100% { transform: translateX(-50%) translateY(0); }
+  50%      { transform: translateX(-50%) translateY(8px); }
+}
+
+/* TICKER */
+.ticker {
+  background: var(--red);
+  padding: 11px 0;
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative; z-index: 2;
+}
+.ticker-track {
+  display: inline-flex;
+  animation: tickerScroll 24s linear infinite;
+}
+.ticker-item {
+  font-family: var(--display);
+  font-size: .8rem;
+  letter-spacing: 4px;
+  margin: 0 24px;
+  opacity: .9;
+}
+@keyframes tickerScroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SHOP / CATALOG
+═══════════════════════════════════════════════════════════════════ */
+.shop-toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 36px;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid var(--b);
+}
+
+.collection-tabs {
+  display: flex; gap: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.collection-tabs::-webkit-scrollbar { display: none; }
+
+.coll-tab {
+  padding: 8px 16px;
+  font-size: .62rem; font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--text-3);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: .18s; white-space: nowrap;
+}
+.coll-tab:hover { color: var(--text-2); }
+.coll-tab.active { color: var(--red-2); border-bottom-color: var(--red); }
+
+.sort-row { display: flex; align-items: center; gap: 10px; }
+
+.sort-select {
+  background: var(--surface);
+  border: 1px solid var(--b);
+  color: var(--text-2);
+  padding: 8px 12px;
+  font-family: var(--body); font-size: .68rem;
+  cursor: pointer;
+}
+.sort-select:focus { outline: none; border-color: var(--b-2); }
+
+.results-count { font-size: .65rem; letter-spacing: 2px; color: var(--text-3); }
+
+/* Product card */
+.product-card {
+  background: var(--ink-3);
+  border: 1px solid var(--b);
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color .25s, transform .25s;
+  position: relative;
+  display: flex; flex-direction: column;
+}
+.product-card:hover { border-color: var(--b-2); transform: translateY(-4px); }
+
+.product-img-wrap { position: relative; overflow: hidden; }
+.product-img-wrap img {
+  width: 100%; height: 340px;
+  object-fit: cover;
+  display: block;
+  transition: transform .55s var(--ease);
+}
+.product-card:hover .product-img-wrap img { transform: scale(1.04); }
+
+.product-badge {
+  position: absolute;
+  top: 12px; left: 12px;
+  padding: 3px 9px;
+  font-size: .56rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+}
+.badge-new  { background: var(--gold);  color: var(--ink); }
+.badge-low  { background: rgba(208,128,32,.85); color: white; }
+.badge-sold { background: rgba(0,0,0,.7); color: var(--text-3); border: 1px solid var(--b); }
+
+.product-colors {
+  position: absolute;
+  bottom: 12px; left: 12px;
+  display: flex; gap: 5px;
+  opacity: 0; transform: translateY(6px);
+  transition: .2s;
+}
+.product-card:hover .product-colors { opacity: 1; transform: translateY(0); }
+
+.color-dot {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.25);
+  cursor: pointer;
+  transition: .15s;
+}
+.color-dot:hover { transform: scale(1.3); border-color: white; }
+.color-dot.selected { border-color: white; }
+
+.product-body { padding: 18px 20px 22px; flex: 1; display: flex; flex-direction: column; gap: 5px; }
+.product-collection { font-size: .58rem; letter-spacing: 3px; color: var(--red); text-transform: uppercase; }
+.product-name { font-family: var(--heading); font-size: 1.3rem; letter-spacing: 2px; line-height: 1.1; }
+.product-desc { font-size: .7rem; color: var(--text-3); line-height: 1.55; flex: 1; }
+.product-price-row { display: flex; align-items: baseline; gap: 10px; margin-top: 4px; }
+.product-price { font-family: var(--display); font-size: 1.25rem; }
+.product-price-orig { font-size: .82rem; color: var(--text-4); text-decoration: line-through; }
+.product-price-save { font-size: .6rem; font-weight: 700; color: var(--gold-3); letter-spacing: 1px; }
+.product-stock { font-size: .58rem; letter-spacing: 2px; font-weight: 700; padding: 2px 7px; }
+.stock-ok   { background: rgba(26,170,74,.12);  color: #44e88a; border: 1px solid rgba(26,170,74,.25); }
+.stock-low  { background: rgba(208,128,32,.12); color: var(--gold-3); border: 1px solid rgba(208,128,32,.25); }
+.stock-out  { background: rgba(200,0,26,.08); color: var(--red-3); border: 1px solid var(--b); }
+
+.product-add {
+  margin-top: 10px;
+  padding: 11px;
+  background: var(--red);
+  border: none; color: white;
+  font-family: var(--body); font-size: .62rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+  cursor: pointer; transition: .2s; width: 100%;
+}
+.product-add:hover { background: var(--red-2); }
+.product-add:disabled { background: var(--surface-2); color: var(--text-4); cursor: not-allowed; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   INVENTORY / ADMIN
+═══════════════════════════════════════════════════════════════════ */
+.admin-grid { display: grid; grid-template-columns: 260px 1fr; gap: 24px; align-items: start; }
+
+.admin-sidebar { position: sticky; top: 84px; }
+
+.admin-nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px;
+  font-size: .7rem; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--text-3); cursor: pointer;
+  border-left: 2px solid transparent;
+  transition: .15s;
+}
+.admin-nav-item:hover { color: var(--text-2); background: var(--red-dim); }
+.admin-nav-item.active { color: var(--red-2); border-left-color: var(--red); background: var(--red-dim); }
+
+.admin-panel { display: none; }
+.admin-panel.active { display: block; }
+
+/* Stats row */
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap: 12px; margin-bottom: 28px; }
+.stat-card { background: var(--surface); border: 1px solid var(--b); padding: 18px 20px; position: relative; overflow: hidden; }
+.stat-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background: var(--c,var(--red)); }
+.stat-label { font-size: .58rem; letter-spacing: 3px; text-transform: uppercase; color: var(--text-3); margin-bottom: 5px; }
+.stat-value { font-family: var(--display); font-size: 2rem; letter-spacing: 2px; }
+.stat-value.red   { color: var(--red-2); }
+.stat-value.gold  { color: var(--gold-2); }
+.stat-value.green { color: #44e88a; }
+
+/* Table */
+.data-table { width: 100%; border-collapse: collapse; font-size: .74rem; }
+.data-table th { text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--b); font-size: .58rem; letter-spacing: 2px; text-transform: uppercase; color: var(--text-4); white-space: nowrap; }
+.data-table td { padding: 11px 14px; border-bottom: 1px solid rgba(255,255,255,.03); vertical-align: middle; }
+.data-table tr:hover td { background: var(--red-dim); }
+
+/* Upload zone */
+.upload-zone {
+  border: 1.5px dashed var(--b-2);
+  padding: 36px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: .25s;
+  background: var(--surface);
+}
+.upload-zone:hover, .upload-zone.drag { border-color: var(--red-2); background: var(--red-dim); }
+.upload-zone-icon { font-size: 2.4rem; display: block; margin-bottom: 10px; }
+.upload-zone-title { font-family: var(--heading); font-size: 1.3rem; letter-spacing: 2px; margin-bottom: 6px; }
+.upload-zone-sub { font-size: .7rem; color: var(--text-3); line-height: 1.6; }
+
+/* Form elements */
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-label { font-size: .6rem; letter-spacing: 3px; text-transform: uppercase; color: var(--text-3); }
+.form-input, .form-textarea, .form-select {
+  background: var(--ink-3);
+  border: 1px solid var(--b);
+  color: var(--text);
+  padding: 11px 14px;
+  font-family: var(--body); font-size: .82rem;
+  width: 100%;
+  transition: border-color .2s;
+}
+.form-input:focus, .form-textarea:focus, .form-select:focus { outline: none; border-color: var(--b-2); }
+.form-input::placeholder, .form-textarea::placeholder { color: var(--text-4); }
+.form-textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
+.form-select { cursor: pointer; }
+
+/* Size chips */
+.size-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.size-chip {
+  width: 44px; height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface); border: 1px solid var(--b);
+  font-size: .66rem; font-weight: 700; letter-spacing: 1px;
+  cursor: pointer; transition: .15s; color: var(--text-3);
+}
+.size-chip:hover { border-color: var(--b-2); color: var(--text); }
+.size-chip.active { background: var(--red); border-color: var(--red); color: white; }
+.size-chip.unavail { opacity: .28; cursor: not-allowed; text-decoration: line-through; }
+
+/* Color builder */
+.color-builder { display: flex; flex-direction: column; gap: 10px; }
+.color-builder-add { display: flex; gap: 8px; align-items: center; }
+.color-picker { width: 40px; height: 36px; background: var(--surface); border: 1px solid var(--b); padding: 3px; cursor: pointer; }
+.color-name-input { flex: 1; background: var(--ink-3); border: 1px solid var(--b); color: var(--text); padding: 9px 12px; font-family: var(--body); font-size: .78rem; }
+.color-name-input:focus { outline: none; border-color: var(--b-2); }
+.color-list { display: flex; gap: 7px; flex-wrap: wrap; }
+.color-tag {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--surface); border: 1px solid var(--b);
+  padding: 5px 9px 5px 6px;
+}
+.color-swatch { width: 20px; height: 20px; border-radius: 50%; border: 1px solid rgba(255,255,255,.18); flex-shrink: 0; }
+.color-name  { font-size: .66rem; letter-spacing: 1px; color: var(--text-2); }
+.color-rm    { background: none; border: none; color: var(--text-4); font-size: .75rem; cursor: pointer; transition: .15s; }
+.color-rm:hover { color: var(--red-2); }
+
+/* Image previews */
+.img-preview-grid { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.img-preview { width: 68px; height: 82px; object-fit: cover; border: 1px solid var(--b); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   COUNTDOWN
+═══════════════════════════════════════════════════════════════════ */
+.countdown-display { display: flex; gap: 20px; flex-wrap: wrap; }
+.countdown-unit { text-align: center; }
+.countdown-num {
+  font-family: var(--display);
+  font-size: clamp(3rem,7vw,6rem);
+  line-height: 1;
+  color: white;
+  background: var(--surface-2);
+  border: 1px solid var(--b);
+  padding: 16px 22px;
+  min-width: 90px;
+  display: block;
+  position: relative;
+  overflow: hidden;
+}
+.countdown-num::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(rgba(200,0,26,.05), transparent);
+  pointer-events: none;
+}
+.countdown-unit-label { font-size: .6rem; letter-spacing: 4px; color: var(--red); text-transform: uppercase; margin-top: 8px; }
+
+.drops-list { display: flex; flex-direction: column; gap: 8px; margin-top: 24px; }
+.drop-item {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--surface); border: 1px solid var(--b);
+  padding: 14px 18px; gap: 12px; flex-wrap: wrap;
+}
+.drop-item-name { font-weight: 600; font-size: .82rem; letter-spacing: 1px; }
+.drop-item-date { font-size: .72rem; color: var(--text-3); font-family: var(--mono); }
+.drop-status { padding: 2px 8px; font-size: .58rem; font-weight: 700; letter-spacing: 2px; }
+.drop-live     { background: rgba(26,170,74,.12); color: #44e88a; border: 1px solid rgba(26,170,74,.25); }
+.drop-upcoming { background: var(--red-dim); color: var(--red-2); border: 1px solid var(--b); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   COMIC READER
+═══════════════════════════════════════════════════════════════════ */
+.reader-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr 200px;
+  gap: 20px;
+  align-items: start;
+}
+
+.reader-sidebar {
+  background: var(--ink-3);
+  border: 1px solid var(--b);
+  overflow: hidden;
+}
+.reader-sidebar-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--b);
+  font-family: var(--display);
+  font-size: .85rem;
+  letter-spacing: 3px;
+  color: var(--red-2);
+}
+
+.chapter-list { max-height: 500px; overflow-y: auto; }
+.chapter-list::-webkit-scrollbar { width: 2px; }
+.chapter-list::-webkit-scrollbar-thumb { background: var(--b-2); }
+.chapter-item {
+  padding: 11px 16px;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  transition: .15s;
+  font-size: .74rem;
+  color: var(--text-3);
+}
+.chapter-item:hover { color: var(--text-2); background: var(--red-dim); }
+.chapter-item.active { color: var(--red-2); border-left-color: var(--red); background: var(--red-dim); }
+
+.reader-main {
+  background: var(--ink-3);
+  border: 1px solid var(--b);
+  overflow: hidden;
+}
+.reader-top-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--b);
+}
+.reader-title { font-family: var(--display); letter-spacing: 3px; font-size: .9rem; }
+.reader-page-info { font-family: var(--mono); font-size: .68rem; color: var(--text-3); }
+
+.reader-canvas {
+  min-height: 520px;
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+  background: var(--ink-2);
+}
+.reader-page-img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.reader-placeholder {
+  text-align: center;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px; padding: 40px;
+}
+.reader-placeholder-num { font-family: var(--display); font-size: 8rem; color: rgba(200,0,26,.08); line-height: 1; }
+.reader-placeholder-label { font-size: .65rem; letter-spacing: 3px; color: var(--text-4); text-transform: uppercase; }
+
+.reader-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px;
+  border-top: 1px solid var(--b);
+}
+.reader-arrow {
+  width: 38px; height: 38px;
+  background: var(--surface); border: 1px solid var(--b);
+  color: white; font-size: 1rem; cursor: pointer; transition: .2s;
+  display: flex; align-items: center; justify-content: center;
+}
+.reader-arrow:hover { background: var(--red); border-color: var(--red); }
+
+.page-thumbs { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; padding: 12px; max-height: 500px; overflow-y: auto; }
+.page-thumb {
+  aspect-ratio: .7;
+  background: var(--surface);
+  border: 1px solid var(--b);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: .15s;
+  font-family: var(--display);
+  font-size: .65rem; color: var(--text-4);
+  position: relative; overflow: hidden;
+}
+.page-thumb:hover, .page-thumb.active { border-color: var(--red); color: var(--red-2); }
+.page-thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   AI LAB
+═══════════════════════════════════════════════════════════════════ */
+.lab-tabs {
+  display: flex; gap: 0;
+  border-bottom: 1px solid var(--b);
+  margin-bottom: 28px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.lab-tabs::-webkit-scrollbar { display: none; }
+.lab-tab {
+  padding: 11px 20px;
+  font-size: .65rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--text-3); cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: .15s; white-space: nowrap;
+}
+.lab-tab:hover { color: var(--text-2); }
+.lab-tab.active { color: var(--red-2); border-bottom-color: var(--red); }
+.lab-tab-content { display: none; }
+.lab-tab-content.active { display: block; }
+
+.lab-grid { display: grid; grid-template-columns: 360px 1fr; gap: 24px; }
+.lab-controls { background: var(--ink-3); border: 1px solid var(--b); padding: 26px; display: flex; flex-direction: column; gap: 16px; }
+.lab-preview { background: var(--ink-2); border: 1px solid var(--b); min-height: 580px; display: flex; align-items: flex-start; justify-content: center; overflow: hidden; position: relative; }
+.lab-preview-inner { width: 100%; padding: 32px; text-align: center; }
+.lab-preview-title { font-family: var(--display); font-size: 3rem; letter-spacing: 4px; margin-bottom: 10px; }
+.lab-preview-sub { color: var(--text-4); letter-spacing: 2px; font-size: .8rem; margin-bottom: 32px; }
+
+.panel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+.panel-cell {
+  background: var(--surface-2);
+  border: 2px solid rgba(255,255,255,.04);
+  min-height: 230px;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+  font-family: var(--display); font-size: .78rem;
+  letter-spacing: 2px; color: var(--text-4);
+}
+.panel-cell img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
+.panel-cell::after { content: ''; position: absolute; inset: 0; background: linear-gradient(rgba(200,0,26,.04), rgba(0,0,0,.2)); pointer-events: none; }
+.panel-label { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,.75); padding: 2px 8px; font-size: .56rem; letter-spacing: 2px; color: var(--red-2); z-index: 5; }
+
+.storyboard { text-align: left; width: 100%; }
+.story-block { border-left: 3px solid var(--red); padding: 14px 18px; margin-bottom: 16px; background: var(--surface-2); border-radius: 0 2px 2px 0; }
+.story-block h3 { font-family: var(--display); letter-spacing: 2px; color: var(--red-2); margin-bottom: 7px; font-size: .95rem; }
+.story-block p  { font-size: .8rem; color: var(--text-2); line-height: 1.65; }
+.story-chars { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.char-tag { padding: 2px 9px; background: var(--red-dim); border: 1px solid var(--b); font-size: .6rem; letter-spacing: 1px; color: var(--red-2); }
+
+.spinner { width: 44px; height: 44px; border: 2px solid var(--surface-3); border-top-color: var(--red); border-radius: 50%; animation: spin .75s linear infinite; margin: 0 auto 18px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ═══════════════════════════════════════════════════════════════════
+   MEDIA LIBRARY
+═══════════════════════════════════════════════════════════════════ */
+.media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px,1fr)); gap: 12px; }
+.media-item {
+  background: var(--surface);
+  border: 1px solid var(--b);
+  aspect-ratio: 1;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.media-item img, .media-item video { width: 100%; height: 100%; object-fit: cover; }
+.media-item-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0);
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  transition: .2s;
+}
+.media-item:hover .media-item-overlay { background: rgba(0,0,0,.65); }
+.media-act { opacity: 0; padding: 7px 12px; background: var(--red); border: none; color: white; font-size: .62rem; font-weight: 700; letter-spacing: 1px; cursor: pointer; transition: .15s; font-family: var(--body); }
+.media-item:hover .media-act { opacity: 1; }
+.media-type { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,.8); padding: 2px 7px; font-size: .56rem; letter-spacing: 2px; color: var(--red-2); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   LORE / UNIVERSE DATABASE
+═══════════════════════════════════════════════════════════════════ */
+.universe-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap: 16px; }
+.universe-card {
+  background: var(--surface);
+  border: 1px solid var(--b);
+  padding: 20px;
+  cursor: pointer;
+  transition: .2s;
+  position: relative;
+  overflow: hidden;
+}
+.universe-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--c,var(--red)); }
+.universe-card:hover { border-color: var(--b-2); }
+.uc-type { font-size: .58rem; letter-spacing: 3px; color: var(--text-3); text-transform: uppercase; margin-bottom: 8px; }
+.uc-name { font-family: var(--heading); font-size: 1.4rem; letter-spacing: 2px; margin-bottom: 6px; }
+.uc-meta { font-size: .7rem; color: var(--text-3); line-height: 1.5; }
+.uc-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+.uc-tag { padding: 1px 7px; background: var(--ink-4); border: 1px solid var(--b); font-size: .58rem; color: var(--text-3); letter-spacing: 1px; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   CART DRAWER
+═══════════════════════════════════════════════════════════════════ */
+.cart-drawer {
+  position: fixed;
+  right: -440px; top: 0; bottom: 0;
+  width: 420px;
+  background: var(--ink-2);
+  border-left: 1px solid var(--b-2);
+  z-index: 900;
+  transition: right .38s var(--ease);
+  display: flex; flex-direction: column;
+}
+.cart-drawer.open { right: 0; }
+.cart-back { position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 899; display: none; }
+.cart-back.open { display: block; }
+
+.cart-head { padding: 20px 22px; border-bottom: 1px solid var(--b); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.cart-head h3 { font-family: var(--display); font-size: 1.1rem; letter-spacing: 4px; }
+.cart-head-meta { font-size: .62rem; letter-spacing: 2px; color: var(--text-3); }
+.cart-x { background: none; border: 1px solid var(--b); color: var(--text-3); width: 32px; height: 32px; cursor: pointer; font-size: .9rem; transition: .15s; display: flex; align-items: center; justify-content: center; }
+.cart-x:hover { background: var(--red); border-color: var(--red); color: white; }
+
+.cart-items { flex: 1; overflow-y: auto; padding: 16px 22px; }
+.cart-items::-webkit-scrollbar { width: 2px; }
+.cart-items::-webkit-scrollbar-thumb { background: var(--b-2); }
+.cart-empty { text-align: center; padding: 50px 20px; color: var(--text-4); }
+.cart-empty-icon { font-size: 2.5rem; display: block; margin-bottom: 10px; opacity: .3; }
+.cart-empty-text { font-size: .7rem; letter-spacing: 2px; text-transform: uppercase; }
+
+.cart-item { display: flex; gap: 12px; padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,.04); }
+.cart-item-img { width: 66px; height: 80px; object-fit: cover; flex-shrink: 0; background: var(--surface); }
+.cart-item-body { flex: 1; min-width: 0; }
+.cart-item-coll { font-size: .56rem; letter-spacing: 2px; color: var(--red); text-transform: uppercase; margin-bottom: 2px; }
+.cart-item-name { font-family: var(--heading); font-size: 1rem; letter-spacing: 2px; line-height: 1.1; margin-bottom: 4px; }
+.cart-item-variant { font-size: .62rem; color: var(--text-3); letter-spacing: 1px; display: flex; align-items: center; gap: 7px; margin-bottom: 8px; }
+.cart-item-color-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; border: 1px solid rgba(255,255,255,.18); }
+.cart-item-row { display: flex; align-items: center; justify-content: space-between; }
+.cart-qty { display: flex; align-items: center; }
+.cart-qty-btn { width: 26px; height: 26px; background: var(--surface-2); border: 1px solid var(--b); color: white; font-size: .85rem; cursor: pointer; transition: .15s; display: flex; align-items: center; justify-content: center; }
+.cart-qty-btn:hover { background: var(--red); }
+.cart-qty-num { width: 32px; height: 26px; background: var(--surface); border: none; border-top: 1px solid var(--b); border-bottom: 1px solid var(--b); color: var(--text); font-family: var(--display); font-size: .85rem; text-align: center; letter-spacing: 1px; }
+.cart-item-price { font-family: var(--display); font-size: 1rem; }
+.cart-rm { background: none; border: none; color: var(--text-4); font-size: .8rem; cursor: pointer; transition: .15s; padding: 4px; }
+.cart-rm:hover { color: var(--red-2); }
+
+.cart-foot { padding: 18px 22px; border-top: 1px solid var(--b); flex-shrink: 0; background: var(--ink); }
+.cart-sum-row { display: flex; justify-content: space-between; font-size: .7rem; color: var(--text-3); margin-bottom: 5px; }
+.cart-sum-total { display: flex; justify-content: space-between; font-family: var(--display); font-size: 1.1rem; letter-spacing: 2px; margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--b); }
+.promo-row { display: flex; gap: 8px; margin-bottom: 14px; }
+.promo-input { flex: 1; background: var(--surface); border: 1px solid var(--b); color: var(--text); padding: 9px 12px; font-family: var(--body); font-size: .72rem; }
+.promo-input:focus { outline: none; border-color: var(--b-2); }
+.promo-input::placeholder { color: var(--text-4); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   NOTIFICATION CENTER
+═══════════════════════════════════════════════════════════════════ */
+.notif-panel {
+  position: fixed;
+  top: 70px; right: 16px;
+  width: 380px; max-height: 80vh;
+  background: rgba(14,9,21,.94);
+  border: 1px solid var(--b-2);
+  backdrop-filter: blur(22px);
+  z-index: 700;
+  display: flex; flex-direction: column;
+  transform: translateY(-14px) scale(.97);
+  opacity: 0; pointer-events: none;
+  transition: all .26s var(--ease);
+  box-shadow: 0 20px 60px rgba(0,0,0,.6);
+}
+.notif-panel.open { transform: translateY(0) scale(1); opacity: 1; pointer-events: all; }
+.notif-head { padding: 14px 16px; border-bottom: 1px solid var(--b); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.notif-head h4 { font-family: var(--display); font-size: .9rem; letter-spacing: 3px; }
+.notif-head-actions { display: flex; gap: 6px; }
+.notif-act-btn { padding: 4px 9px; background: none; border: 1px solid var(--b); color: var(--text-3); font-size: .58rem; letter-spacing: 1px; cursor: pointer; transition: .15s; font-family: var(--body); text-transform: uppercase; }
+.notif-act-btn:hover { border-color: var(--red); color: var(--red-2); }
+.notif-list { flex: 1; overflow-y: auto; padding: 6px; }
+.notif-list::-webkit-scrollbar { width: 2px; }
+.notif-list::-webkit-scrollbar-thumb { background: var(--b-2); }
+.notif-empty { text-align: center; padding: 36px; color: var(--text-4); font-size: .7rem; letter-spacing: 2px; text-transform: uppercase; }
+.notif-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 11px 10px;
+  cursor: pointer; transition: .15s;
+  border-left: 2px solid transparent;
+  margin-bottom: 2px;
+}
+.notif-item:hover { background: rgba(255,255,255,.02); }
+.notif-item.unread { background: var(--red-dim); border-left-color: var(--red); }
+.notif-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+.notif-body { flex: 1; min-width: 0; }
+.notif-title { font-size: .76rem; font-weight: 700; margin-bottom: 2px; }
+.notif-msg { font-size: .68rem; color: var(--text-2); line-height: 1.45; }
+.notif-time { font-size: .58rem; color: var(--text-4); margin-top: 3px; }
+.notif-rm { opacity: 0; background: none; border: none; color: var(--text-4); font-size: .8rem; cursor: pointer; transition: .15s; padding: 2px; align-self: center; }
+.notif-item:hover .notif-rm { opacity: 1; }
+.notif-rm:hover { color: var(--red-2); }
+.notif-footer { padding: 10px 12px; border-top: 1px solid var(--b); flex-shrink: 0; }
+.notif-footer-btn { width: 100%; padding: 9px; background: var(--surface-2); border: 1px solid var(--b); color: var(--text-3); font-size: .62rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: .2s; font-family: var(--body); }
+.notif-footer-btn:hover { background: var(--red); border-color: var(--red); color: white; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   TOAST SYSTEM
+═══════════════════════════════════════════════════════════════════ */
+.toast-stack {
+  position: fixed; bottom: 22px; right: 16px;
+  z-index: 2000;
+  display: flex; flex-direction: column-reverse; gap: 8px;
+  max-width: 360px; pointer-events: none;
+}
+.toast {
+  background: rgba(14,9,21,.95);
+  border: 1px solid var(--b-2);
+  border-left: 3px solid var(--tc,var(--red));
+  backdrop-filter: blur(16px);
+  padding: 12px 14px;
+  display: flex; align-items: flex-start; gap: 10px;
+  pointer-events: all; cursor: pointer;
+  transform: translateX(110%); opacity: 0;
+  transition: all .32s var(--spring);
+  box-shadow: 0 8px 28px rgba(0,0,0,.5);
+  position: relative; overflow: hidden;
+}
+.toast.show { transform: translateX(0); opacity: 1; }
+.toast.exit { transform: translateX(115%); opacity: 0; }
+.toast-bar { position: absolute; bottom: 0; left: 0; height: 2px; background: var(--tc,var(--red)); opacity: .5; transition: width linear; }
+.toast-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
+.toast-body { flex: 1; min-width: 0; }
+.toast-ttl { font-size: .76rem; font-weight: 700; letter-spacing: .5px; margin-bottom: 2px; }
+.toast-txt { font-size: .68rem; color: var(--text-2); line-height: 1.4; }
+.toast-close { background: none; border: none; color: var(--text-4); font-size: .75rem; cursor: pointer; transition: .15s; flex-shrink: 0; }
+.toast-close:hover { color: var(--text); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   PRODUCT DETAIL MODAL
+═══════════════════════════════════════════════════════════════════ */
+.modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(3,2,5,.92);
+  z-index: 1500;
+  display: none; align-items: center; justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(8px);
+}
+.modal-backdrop.open { display: flex; }
+
+.product-modal {
+  background: var(--ink-2);
+  border: 1px solid var(--b-2);
+  max-width: 940px; width: 100%; max-height: 88vh;
+  overflow-y: auto;
+  display: grid; grid-template-columns: 1fr 1fr;
+  position: relative;
+}
+.product-modal::-webkit-scrollbar { width: 2px; }
+.modal-close { position: absolute; top: 14px; right: 14px; z-index: 10; width: 34px; height: 34px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); color: white; font-size: .9rem; cursor: pointer; transition: .15s; display: flex; align-items: center; justify-content: center; }
+.modal-close:hover { background: var(--red); border-color: var(--red); }
+
+.modal-gallery { position: relative; overflow: hidden; }
+.modal-main-img { width: 100%; aspect-ratio: 3/4; object-fit: cover; display: block; }
+.modal-info { padding: 32px 34px; display: flex; flex-direction: column; gap: 0; overflow-y: auto; }
+.modal-info::-webkit-scrollbar { width: 2px; }
+.modal-coll { font-size: .58rem; letter-spacing: 4px; color: var(--red); text-transform: uppercase; margin-bottom: 5px; }
+.modal-name { font-family: var(--display); font-size: 2rem; letter-spacing: 3px; line-height: 1; margin-bottom: 8px; }
+.modal-desc { font-size: .78rem; color: var(--text-2); line-height: 1.7; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--b); }
+.modal-price-row { display: flex; align-items: baseline; gap: 12px; margin-bottom: 20px; }
+.modal-price { font-family: var(--display); font-size: 2.2rem; }
+.modal-price-orig { font-size: .95rem; color: var(--text-4); text-decoration: line-through; }
+.modal-add { padding: 15px; background: var(--red); border: none; color: white; font-family: var(--body); font-size: .72rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; cursor: pointer; transition: .22s; width: 100%; margin-top: 10px; }
+.modal-add:hover { background: var(--red-2); }
+.modal-add:disabled { background: var(--surface-2); color: var(--text-4); cursor: not-allowed; }
+.qty-ctrl { display: flex; align-items: center; border: 1px solid var(--b-2); }
+.qty-b { width: 36px; height: 40px; background: var(--surface-2); border: none; color: white; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: .15s; }
+.qty-b:hover { background: var(--red); }
+.qty-n { width: 44px; height: 40px; background: var(--surface); border: none; border-left: 1px solid var(--b); border-right: 1px solid var(--b); color: var(--text); font-family: var(--display); font-size: .95rem; text-align: center; }
+.selector-lbl { font-size: .6rem; letter-spacing: 3px; text-transform: uppercase; color: var(--text-3); margin-bottom: 8px; display: flex; justify-content: space-between; }
+.selector-lbl span { color: var(--text-2); font-weight: 700; }
+.color-palette { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 20px; }
+.palette-swatch { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: .18s; position: relative; }
+.palette-swatch:hover { transform: scale(1.15); }
+.palette-swatch.sel { border-color: white; box-shadow: 0 0 0 1px var(--red); }
+.palette-tip { position: absolute; bottom: calc(100% + 5px); left: 50%; transform: translateX(-50%); background: var(--ink); border: 1px solid var(--b); padding: 2px 7px; font-size: .56rem; letter-spacing: 1px; white-space: nowrap; opacity: 0; pointer-events: none; transition: .15s; }
+.palette-swatch:hover .palette-tip { opacity: 1; }
+
+/* Accordion */
+.accord { border-top: 1px solid var(--b); margin-top: 16px; }
+.accord-item { border-bottom: 1px solid var(--b); }
+.accord-trigger { width: 100%; background: none; border: none; color: var(--text-2); padding: 12px 0; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-family: var(--body); font-size: .68rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; transition: .15s; }
+.accord-trigger:hover { color: var(--text); }
+.accord-arrow { transition: .22s; font-size: .65rem; }
+.accord-trigger.open .accord-arrow { transform: rotate(180deg); }
+.accord-body { max-height: 0; overflow: hidden; transition: max-height .3s var(--ease); }
+.accord-body.open { max-height: 200px; }
+.accord-content { padding: 0 0 14px; font-size: .74rem; color: var(--text-3); line-height: 1.7; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   LOOKBOOK
+═══════════════════════════════════════════════════════════════════ */
+.lookbook-masonry { columns: 4; gap: 10px; }
+.lookbook-item { break-inside: avoid; margin-bottom: 10px; overflow: hidden; position: relative; cursor: pointer; }
+.lookbook-item img { width: 100%; display: block; transition: transform .55s var(--ease); }
+.lookbook-item:hover img { transform: scale(1.05); }
+.lookbook-item::after { content: ''; position: absolute; inset: 0; background: linear-gradient(transparent 50%, rgba(200,0,26,.2)); opacity: 0; transition: .3s; pointer-events: none; }
+.lookbook-item:hover::after { opacity: 1; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════════════════════════ */
+@media (max-width: 1100px) {
+  .lab-grid { grid-template-columns: 1fr; }
+  .reader-layout { grid-template-columns: 200px 1fr; }
+  .reader-thumb-panel { display: none; }
+  .admin-grid { grid-template-columns: 1fr; }
+  .admin-sidebar { position: static; }
+}
+@media (max-width: 820px) {
+  .nav-links { display: none; }
+  .hamburger { display: flex; }
+  .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; }
+  .product-modal { grid-template-columns: 1fr; }
+  .reader-layout { grid-template-columns: 1fr; }
+  .reader-sidebar { display: none; }
+  .lookbook-masonry { columns: 2; }
+  .stat-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 480px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-h1 { font-size: 3.5rem; }
+  .countdown-display { gap: 12px; }
+  .countdown-num { padding: 12px 16px; min-width: 72px; }
+  .cart-drawer { width: 100%; }
+  .notif-panel { left: 0; right: 0; width: auto; }
+  .lookbook-masonry { columns: 1; }
+}
+</style>
+</head>
+<body>
+
+<!-- THREE.JS BG -->
+<canvas id="bg-canvas"></canvas>
+
+<!-- OVERLAYS -->
+<div class="cart-back" id="cartBack" onclick="closeCart()"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     CART DRAWER
+═══════════════════════════════════════════════════════════════ -->
+<div class="cart-drawer" id="cartDrawer">
+  <div class="cart-head">
+    <div>
+      <h3>YOUR CART</h3>
+      <div class="cart-head-meta" id="cartMeta">0 items</div>
+    </div>
+    <button class="cart-x" onclick="closeCart()">✕</button>
+  </div>
+  <div class="cart-items" id="cartItems"></div>
+  <div class="cart-foot">
+    <div id="cartSummary"></div>
+    <div class="promo-row">
+      <input class="promo-input" id="promoInput" placeholder="PROMO CODE">
+      <button class="btn btn-ghost btn-sm" onclick="applyPromo()">APPLY</button>
+    </div>
+    <button class="btn btn-primary" style="width:100%;padding:15px;" onclick="toast('✅','Checkout','Connect Stripe to process payment')">CHECKOUT →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     NOTIFICATION PANEL
+═══════════════════════════════════════════════════════════════ -->
+<div class="notif-panel" id="notifPanel">
+  <div class="notif-head">
+    <h4>NOTIFICATIONS</h4>
+    <div class="notif-head-actions">
+      <button class="notif-act-btn" onclick="markAllRead()">READ ALL</button>
+      <button class="notif-act-btn" onclick="clearNotifs()">CLEAR</button>
+    </div>
+  </div>
+  <div class="notif-list" id="notifList"></div>
+  <div class="notif-footer">
+    <button class="notif-footer-btn" onclick="showPage('drops')">VIEW ALL ALERTS →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PRODUCT MODAL
+═══════════════════════════════════════════════════════════════ -->
+<div class="modal-backdrop" id="productModal">
+  <div class="product-modal" id="productModalContent">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-gallery" id="modalGallery"></div>
+    <div class="modal-info" id="modalInfo"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     NAVBAR
+═══════════════════════════════════════════════════════════════ -->
+<nav class="nav" id="mainNav">
+  <div class="nav-logo" onclick="showPage('home')">MENACE<span>2</span>SOCIETY</div>
+  <ul class="nav-links" id="navLinks">
+    <li class="nav-link active" onclick="showPage('home')">Home</li>
+    <li class="nav-link" onclick="showPage('shop')">Shop</li>
+    <li class="nav-link" onclick="showPage('drops')">Drops</li>
+    <li class="nav-link" onclick="showPage('comics')">Comics</li>
+    <li class="nav-link" onclick="showPage('media')">Media</li>
+    <li class="nav-link" onclick="showPage('universe')">Universe</li>
+    <li class="nav-link" onclick="showPage('lab')">AI Lab</li>
+    <li class="nav-link" onclick="showPage('admin')">Admin</li>
+  </ul>
+  <div class="nav-right">
+    <button class="nav-icon" onclick="toggleNotifs()" title="Notifications">
+      🔔
+      <span class="notification-badge" id="notifBadge">0</span>
+    </button>
+    <button class="cart-btn" onclick="openCart()">
+      🛍 CART <span id="cartCount">0</span>
+    </button>
+    <button class="hamburger" id="hamburger" onclick="toggleMobileMenu()">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     TOAST STACK
+═══════════════════════════════════════════════════════════════ -->
+<div class="toast-stack" id="toastStack"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PAGE: HOME
+═══════════════════════════════════════════════════════════════ -->
+<div class="page active" id="page-home">
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-orb hero-orb-1"></div>
+    <div class="hero-orb hero-orb-2"></div>
+    <div class="hero-content">
+      <span class="hero-kicker">Est. 2026 · Houston TX · The Universe</span>
+      <h1 class="hero-h1">MOST WANTED<span class="line-red">MOST HATED</span>MOST FEARED</h1>
+      <p class="hero-sub">Streetwear · Comics · AI Universe · Creator Platform</p>
+      <div class="hero-btns">
+        <button class="btn btn-primary" onclick="showPage('shop')">SHOP THE DROP</button>
+        <button class="btn btn-ghost"   onclick="showPage('comics')">READ COMICS</button>
+        <button class="btn btn-gold"    onclick="showPage('lab')">AI LAB</button>
+      </div>
+    </div>
+    <div class="scroll-cue">SCROLL</div>
+  </section>
+
+  <div class="ticker">
+    <div class="ticker-track" id="tickerTrack"></div>
+  </div>
+
+  <section class="section fade-up">
+    <span class="eyebrow">The Philosophy</span>
+    <h2 class="display-title">THE <span>MINDSET</span></h2>
+    <div class="grid-3" id="homeCards"></div>
+  </section>
+
+  <section class="section section-alt fade-up">
+    <span class="eyebrow">Latest Drops</span>
+    <h2 class="display-title">THE <span>COLLECTION</span></h2>
+    <div class="grid-auto" id="homeFeatured"></div>
+    <div style="text-align:center;margin-top:36px;">
+      <button class="btn btn-ghost" onclick="showPage('shop')">VIEW FULL CATALOG →</button>
+    </div>
+  </section>
+
+  <section class="section fade-up">
+    <span class="eyebrow">Visual Archive</span>
+    <h2 class="display-title">LOOK<span>BOOK</span></h2>
+    <div class="lookbook-masonry" id="lookbookGrid"></div>
+  </section>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PAGE: SHOP
+═══════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-shop">
+  <div class="section">
+    <span class="eyebrow">The Archive</span>
+    <h2 class="display-title">CLOTHING <span>CATALOG</span></h2>
+    <div class="shop-toolbar">
+      <div class="collection-tabs" id="shopTabs"></div>
+      <div class="sort-row">
+        <span class="results-count" id="shopCount">— items</span>
+        <select class="sort-select" onchange="sortShop(this.value)">
+          <option value="default">Default</option>
+          <option value="price-asc">Price: Low–High</option>
+          <option value="price-desc">Price: High–Low</option>
+          <option value="name">Name A–Z</option>
+        </select>
+      </div>
+    </div>
+    <div class="grid-auto" id="shopGrid"></div>
+    <div style="text-align:center;padding:50px;display:none;" id="shopEmpty">
+      <p style="color:var(--text-4);font-size:.76rem;letter-spacing:3px;text-transform:uppercase;">No products in this collection yet.</p>
+      <button class="btn btn-ghost btn-sm" style="margin-top:16px;" onclick="showPage('admin')">ADD PRODUCTS →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PAGE: DROPS
+═══════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-drops">
+  <div class="section">
+    <span class="eyebrow">Upcoming Releases</span>
+    <h2 class="display-title">DROP <span>COUNTDOWN</span></h2>
+    <div style="max-width:820px;margin:0 auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;flex-wrap:wrap;gap:14px;">
+        <div>
+          <div style="font-family:var(--display);font-size:1.3rem;letter-spacing:3px;color:var(--red);" id="dropActiveName">SELECT A DROP</div>
+          <div style="font-size:.68rem;font-family:var(--mono);color:var(--text-4);margin-top:4px;" id="dropActiveDate">—</div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <select id="dropSelector" class="sort-select" onchange="selectDrop(this.value)" style="min-width:200px;">
+            <option value="">— Select Drop —</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="openScheduleModal()">+ SCHEDULE DROP</button>
+        </div>
+      </div>
+      <div class="countdown-display" id="countdownDisplay">
+        <div class="countdown-unit"><span class="countdown-num" id="cdD">00</span><div class="countdown-unit-label">Days</div></div>
+        <div class="countdown-unit"><span class="countdown-num" id="cdH">00</span><div class="countdown-unit-label">Hours</div></div>
+        <div class="countdown-unit"><span class="countdown-num" id="cdM">00</span><div class="countdown-unit-label">Mins</div></div>
+        <div class="countdown-unit"><span class="countdown-num" id="cdS">00</span><div class="countdown-unit-label">Secs</div></div>
+      </div>
+      <div class="drops-list" id="dropsList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PAGE: COMICS
+═══════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-comics">
+  <div class="section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;flex-wrap:wrap;gap:12px;">
+      <div>
+        <span class="eyebrow">Motion Comics</span>
+        <h2 class="display-title" style="margin-bottom:0;">MENACE <span>READER</span></h2>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('comicImport').click()">⬆ IMPORT PAGES</button>
+        <button class="btn btn-ghost btn-sm" onclick="addEpisode()">+ ADD EPISODE</button>
+        <button class="btn btn-primary btn-sm" onclick="exportComicPDF()">⬇ EXPORT PDF</button>
+      </div>
+    </div>
+    <input type="file" id="comicImport" multiple accept="image/*" style="display:none" onchange="importPages(this)">
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px;" id="episodeTabs"></div>
+    <div class="reader-layout">
+      <div class="reader-sidebar">
+        <div class="reader-sidebar-header">PAGES</div>
+        <div class="chapter-list" id="chapterList"></div>
+      </div>
+      <div class="reader-main">
+        <div class="reader-top-bar">
+          <span class="reader-title" id="readerTitle">EPISODE 1: ORIGINS</span>
+          <span class="reader-page-info" id="readerPageInfo">1 / 111</span>
+        </div>
+        <div class="reader-canvas" id="readerCanvas">
+          <div class="reader-placeholder" id="readerPlaceholder">
+            <div class="reader-placeholder-num" id="readerPageNum">1</div>
+            <div class="reader-placeholder-label">IMPORT A PAGE TO BEGIN</div>
+          </div>
+          <img class="reader-page-img" id="readerImg" src="" alt="" style="display:none;">
+        </div>
+        <div class="reader-nav">
+          <button class="reader-arrow" onclick="comicPrev()">◀</button>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-family:var(--mono);font-size:.68rem;color:var(--text-3);" id="readerPageCounter">1 / 111</span>
+            <input type="number" id="jumpInput" min="1" placeholder="Go" style="width:52px;background:var(--surface);border:1px solid var(--b);color:var(--text);padding:5px 8px;font-family:var(--mono);font-size:.72rem;text-align:center;" onkeydown="if(event.key==='Enter')jumpPage(this.value)">
+          </div>
+          <button class="reader-arrow" onclick="comicNext()">▶</button>
+        </div>
+      </div>
+      <div class="reader-thumb-panel reader-sidebar">
+        <div class="reader-sidebar-header">THUMBNAILS</div>
+        <div class="page-thumbs" id="pageThumbs"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PAGE: MEDIA LIBRARY
+═══════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-media">
+  <div class="section">
+    <span class="eyebrow">Import & Manage</span>
+    <h2 class="display-title">MEDIA <span>LIBRARY</span></h2>
+    <div class="upload-zone" id="mediaZone"
+      onclick="document.getElementById('mediaInput').click()"
+      ondragover="event.preventDefault();this.classList.add('drag')"
+      ondragleave="this.classList.remove('drag')"
+      ondrop="handleMediaDrop(event)">
+      <span class="upload-zone-icon">📁</span>
+      <div class="upload-zone-title">DROP FILES OR CLICK TO UPLOAD</div>
+      <div class="upload-zone-sub">Images and videos supported · JPG, PNG, WEBP, GIF, MP4, MOV</div>
+    </div>
+    <input type="file" id="mediaInput" multiple accept="image/*,video/*" style="display:none" onchange="handleMediaUpload(this)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:18px 0 14px;">
+      <span style="font-size:.68rem;letter-spacing:2px;color:var(--text-3);" id="mediaCount">0 FILES</span>
+      <button class="btn btn-ghost btn-xs" onclick="clearMedia()">CLEAR ALL</button>
+    </div>
+    <div class="media-grid" id="mediaGrid"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PAGE: UNIVERSE DATABASE
+═══════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-universe">
+  <div class="section">
+    <span class="eyebrow">Lore & World Building</span>
+    <h2 class="display-title">UNIVERSE <span>DATABASE</span></h2>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:32px;">
+      <button class="btn btn-ghost btn-sm" onclick="universeFilter('all',this)">All</button>
+      <button class="btn btn-ghost btn-sm" onclick="universeFilter('character',this)">Characters</button>
+      <button class="btn btn-ghost btn-sm" onclick="universeFilter('location',this)">Locations</button>
+      <button class="btn btn-ghost btn-sm" onclick="universeFilter('faction',this)">Factions</button>
+      <button class="btn btn-ghost btn-sm" onclick="universeFilter('event',this)">Events</button>
+      <button class="btn btn-primary btn-sm" onclick="openUniverseForm()">+ ADD ENTRY</button>
+    </div>
+    <div class="universe-grid" id="universeGrid"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PAGE: AI LAB
+═══════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-lab">
+  <div class="section">
+    <span class="eyebrow">Powered by Pollinations AI</span>
+    <h2 class="display-title">MENACE <span>AI LAB</span></h2>
+    <div class="lab-tabs" id="labTabs">
+      <div class="lab-tab active" onclick="switchLabTab('image',this)">AI IMAGE</div>
+      <div class="lab-tab" onclick="switchLabTab('comic',this)">COMIC PAGES</div>
+      <div class="lab-tab" onclick="switchLabTab('storyline',this)">STORYLINE</div>
+      <div class="lab-tab" onclick="switchLabTab('character',this)">CHARACTER</div>
+    </div>
+    <!-- IMAGE -->
+    <div class="lab-tab-content active" id="labcontent-image">
+      <div class="lab-grid">
+        <div class="lab-controls">
+          <div class="form-group"><label class="form-label">Prompt</label><textarea class="form-textarea" id="imgPrompt" placeholder="DaMenace standing in a fractured mirror city..."></textarea></div>
+          <div class="form-group"><label class="form-label">Style</label>
+            <select class="form-select" id="imgStyle">
+              <option>Grunge</option><option>Cyberpunk</option><option>Streetwear</option>
+              <option>Y2K</option><option>Dark Fantasy</option><option>Horror Manga</option><option>Anime Noir</option>
+            </select>
+          </div>
+          <div class="form-group"><label class="form-label">Details</label><textarea class="form-textarea" id="imgDetails" style="min-height:70px;" placeholder="Lighting, mood, colors..."></textarea></div>
+          <button class="btn btn-primary" onclick="generateImage()">⚡ GENERATE</button>
+          <button class="btn btn-ghost" onclick="downloadLastImage()">⬇ DOWNLOAD</button>
+        </div>
+        <div class="lab-preview" id="imgPreview"><div class="lab-preview-inner"><div class="lab-preview-title">AI IMAGE</div><div class="lab-preview-sub">Enter a prompt to begin</div></div></div>
+      </div>
+    </div>
+    <!-- COMIC -->
+    <div class="lab-tab-content" id="labcontent-comic">
+      <div class="lab-grid">
+        <div class="lab-controls">
+          <div class="form-group"><label class="form-label">Story Prompt</label><textarea class="form-textarea" id="comicPrompt" placeholder="Describe the comic scene..."></textarea></div>
+          <div class="form-group"><label class="form-label">Style</label><select class="form-select" id="comicStyle"><option>Grunge</option><option>Cyberpunk</option><option>Horror Manga</option><option>Anime Noir</option></select></div>
+          <div class="form-group"><label class="form-label">Mode</label><select class="form-select" id="comicMode"><option>Comic Book Page</option><option>Character Sheet</option><option>Storyboard</option></select></div>
+          <div class="form-group"><label class="form-label">Scene Details</label><textarea class="form-textarea" id="comicDetails" style="min-height:70px;" placeholder="Characters, emotions, environment..."></textarea></div>
+          <button class="btn btn-primary" onclick="generateComic()">⚡ GENERATE PANELS</button>
+          <button class="btn btn-ghost" onclick="saveToReader()">SAVE TO READER</button>
+        </div>
+        <div class="lab-preview" id="comicPreview"><div class="lab-preview-inner"><div class="lab-preview-title">COMIC AI</div><div class="lab-preview-sub">Generate panels for your story</div><div class="panel-grid"><div class="panel-cell">PANEL 1</div><div class="panel-cell">PANEL 2</div><div class="panel-cell">PANEL 3</div><div class="panel-cell">PANEL 4</div></div></div></div>
+      </div>
+    </div>
+    <!-- STORYLINE -->
+    <div class="lab-tab-content" id="labcontent-storyline">
+      <div class="lab-grid">
+        <div class="lab-controls">
+          <div class="form-group"><label class="form-label">Main Character</label><input class="form-input" id="storyChar" placeholder="DaMenace"></div>
+          <div class="form-group"><label class="form-label">Genre</label><select class="form-select" id="storyGenre"><option>Dark Urban Fantasy</option><option>Cyberpunk Noir</option><option>Horror Thriller</option><option>Grunge Superhero</option></select></div>
+          <div class="form-group"><label class="form-label">Number of Arcs</label><select class="form-select" id="storyArcs"><option value="3">3 Arcs</option><option value="5">5 Arcs</option><option value="7">7 Arcs</option></select></div>
+          <div class="form-group"><label class="form-label">Setting</label><input class="form-input" id="storySetting" placeholder="Houston 2040"></div>
+          <div class="form-group"><label class="form-label">Themes</label><textarea class="form-textarea" id="storyTheme" style="min-height:70px;" placeholder="Revenge, identity, duality..."></textarea></div>
+          <button class="btn btn-primary" onclick="generateStoryline()">⚡ BUILD UNIVERSE</button>
+          <button class="btn btn-ghost" onclick="exportStoryPDF()">⬇ EXPORT PDF</button>
+        </div>
+        <div class="lab-preview" style="align-items:flex-start;" id="storylinePreview"><div class="lab-preview-inner"><div class="lab-preview-title">STORYLINE</div><div class="lab-preview-sub">Build your comic universe</div></div></div>
+      </div>
+    </div>
+    <!-- CHARACTER -->
+    <div class="lab-tab-content" id="labcontent-character">
+      <div class="lab-grid">
+        <div class="lab-controls">
+          <div class="form-group"><label class="form-label">Character Name</label><input class="form-input" id="charName" placeholder="DaMenace"></div>
+          <div class="form-group"><label class="form-label">Faction</label><input class="form-input" id="charFaction" placeholder="Menace Mafia"></div>
+          <div class="form-group"><label class="form-label">Appearance</label><textarea class="form-textarea" id="charAppearance" placeholder="Tall, dark hoodie, red eyes..."></textarea></div>
+          <div class="form-group"><label class="form-label">Abilities / Powers</label><textarea class="form-textarea" id="charPowers" placeholder="Mirror manipulation, shadow control..."></textarea></div>
+          <div class="form-group"><label class="form-label">Backstory</label><textarea class="form-textarea" id="charLore" placeholder="Character origins and motivations..."></textarea></div>
+          <button class="btn btn-primary" onclick="generateCharacter()">⚡ GENERATE CHARACTER</button>
+          <button class="btn btn-ghost" onclick="saveCharToDB()">SAVE TO UNIVERSE DB</button>
+        </div>
+        <div class="lab-preview" id="charPreview"><div class="lab-preview-inner"><div class="lab-preview-title">CHARACTER</div><div class="lab-preview-sub">Generate and save to the universe</div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PAGE: ADMIN
+═══════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-admin">
+  <div class="section">
+    <span class="eyebrow">Backend Control</span>
+    <h2 class="display-title">ADMIN <span>DASHBOARD</span></h2>
+    <div class="admin-grid">
+      <div class="admin-sidebar">
+        <div style="background:var(--ink-3);border:1px solid var(--b);overflow:hidden;">
+          <div id="adminNav"></div>
+        </div>
+      </div>
+      <div id="adminContent"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     JAVASCRIPT — Complete System
+═══════════════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+/* ═══════════════════════════════════
+   THREE.JS BACKGROUND
+═══════════════════════════════════ */
+(function initBG() {
+  const canvas = document.getElementById('bg-canvas');
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, .1, 1000);
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+
+  const geo = new THREE.TorusKnotGeometry(10, 3, 100, 16);
+  const mat = new THREE.MeshStandardMaterial({ color: 0xc8001a, wireframe: true });
+  const torus = new THREE.Mesh(geo, mat);
+  scene.add(torus);
+
+  const pl = new THREE.PointLight(0xff2222, 3); pl.position.set(20, 20, 20); scene.add(pl);
+  scene.add(new THREE.AmbientLight(0x110008));
+  camera.position.z = 30;
+
+  (function loop() { requestAnimationFrame(loop); torus.rotation.x += .003; torus.rotation.y += .005; renderer.render(scene, camera); })();
+  window.addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+})();
+
+/* ═══════════════════════════════════
+   TICKER
+═══════════════════════════════════ */
+(function initTicker() {
+  const items = ['MOST WANTED', '•', 'MOST HATED', '•', 'MOST FEARED', '•', 'MENACE 2 SOCIETY', '•', 'NEW DROP 2026', '•', 'AI UNIVERSE', '•', 'STREETWEAR FOR THE MISUNDERSTOOD', '•'];
+  const track = document.getElementById('tickerTrack');
+  const doubled = [...items, ...items];
+  track.innerHTML = doubled.map(t => `<span class="ticker-item">${t}</span>`).join('');
+})();
+
+/* ═══════════════════════════════════
+   SCROLL ANIMATIONS
+═══════════════════════════════════ */
+const fadeObserver = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); });
+}, { threshold: .1 });
+document.querySelectorAll('.fade-up').forEach(el => fadeObserver.observe(el));
+
+/* ═══════════════════════════════════
+   UTILITIES
+═══════════════════════════════════ */
+let _uid = 0;
+const uid = () => `m2s-${Date.now()}-${++_uid}`;
+const esc = s => String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const now = () => new Date().toISOString();
+const fmtTime = date => {
+  const diff = (Date.now() - new Date(date)) / 1000;
+  if (diff < 60) return 'Just now';
+  if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+  return new Date(date).toLocaleDateString();
+};
+
+/* ═══════════════════════════════════
+   PAGE SYSTEM
+═══════════════════════════════════ */
+const PAGE_IDS = ['home','shop','drops','comics','media','universe','lab','admin'];
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id)?.classList.add('active');
+  document.querySelectorAll('.nav-link').forEach((l, i) => l.classList.toggle('active', PAGE_IDS[i] === id));
+  window.scrollTo(0, 0);
+  closeCart(); closeNotifs();
+  // Page-specific init
+  if (id === 'shop')     { renderShopTabs(); renderShop(); }
+  if (id === 'drops')    { renderDrops(); }
+  if (id === 'comics')   { renderEpisodeTabs(); renderComicReader(); }
+  if (id === 'admin')    { renderAdmin(); }
+  if (id === 'universe') { renderUniverseGrid(); }
+  if (id === 'home')     { renderHome(); }
+}
+
+function toggleMobileMenu() {
+  const links = document.getElementById('navLinks');
+  links.style.display = links.style.display === 'flex' ? 'none' : 'flex';
+  links.style.flexDirection = 'column';
+  links.style.position = 'absolute';
+  links.style.top = '64px'; links.style.left = '0'; links.style.right = '0';
+  links.style.background = 'rgba(3,2,5,.98)';
+  links.style.padding = '16px 0';
+  links.style.zIndex = '1000';
+}
+
+/* ═══════════════════════════════════
+   TOAST SYSTEM
+═══════════════════════════════════ */
+const TYPE_CFG = {
+  drop:         { color: '#c8001a', icon: '🔥' },
+  payment:      { color: '#1aaa4a', icon: '✅' },
+  order:        { color: '#c07828', icon: '📦' },
+  shipping:     { color: '#6050c0', icon: '🚚' },
+  restock:      { color: '#3060c0', icon: '♻️' },
+  stock_warning:{ color: '#d08020', icon: '⚠️' },
+  announcement: { color: '#9030c0', icon: '📣' },
+  default:      { color: '#c8001a', icon: '🔔' },
+};
+
+let toastId = 0;
+function toast(icon, title, message, type = 'default', duration = 5000) {
+  const id = 'toast-' + (++toastId);
+  const color = TYPE_CFG[type]?.color || TYPE_CFG.default.color;
+  const el = document.createElement('div');
+  el.className = 'toast'; el.id = id;
+  el.style.setProperty('--tc', color);
+  el.innerHTML = `
+    <span class="toast-icon">${icon}</span>
+    <div class="toast-body">
+      <div class="toast-ttl">${esc(title)}</div>
+      <div class="toast-txt">${esc(message)}</div>
+    </div>
+    <button class="toast-close" onclick="dismissToast('${id}')">✕</button>
+    <div class="toast-bar" id="${id}-bar" style="width:100%;"></div>`;
+  document.getElementById('toastStack').appendChild(el);
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
+  // Progress bar
+  const bar = document.getElementById(id + '-bar');
+  const start = Date.now();
+  const tick = () => { const pct = Math.max(0, 100 - ((Date.now() - start) / duration) * 100); if (bar) bar.style.width = pct + '%'; if (pct > 0) requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+  setTimeout(() => dismissToast(id), duration);
+  const toasts = document.querySelectorAll('.toast');
+  if (toasts.length > 5) dismissToast(toasts[0].id);
+}
+function dismissToast(id) {
+  const el = document.getElementById(id); if (!el) return;
+  el.classList.add('exit'); setTimeout(() => el.remove(), 400);
+}
+
+/* ═══════════════════════════════════
+   NOTIFICATION SYSTEM
+═══════════════════════════════════ */
+let notifications = [
+  { id:uid(), title:'🔥 ORIGINS VOL.1 LIVE', message:'New collection just dropped.', type:'drop', read:false, ts: new Date(Date.now()-360000).toISOString() },
+  { id:uid(), title:'PAYMENT CONFIRMED', message:'Order #M2S-4821 — $180 processed.', type:'payment', read:false, ts: new Date(Date.now()-720000).toISOString() },
+  { id:uid(), title:'⚠️ LOW STOCK: Chaos Denim M', message:'Only 2 left.', type:'stock_warning', read:true, ts: new Date(Date.now()-1800000).toISOString() },
+];
+
+function renderNotifs() {
+  const list = document.getElementById('notifList');
+  const unread = notifications.filter(n => !n.read).length;
+  const badge = document.getElementById('notifBadge');
+  badge.textContent = unread > 99 ? '99+' : unread;
+  badge.classList.toggle('show', unread > 0);
+  if (!notifications.length) { list.innerHTML = '<div class="notif-empty">No notifications</div>'; return; }
+  list.innerHTML = notifications.slice(0, 20).map(n => `
+    <div class="notif-item ${n.read ? '' : 'unread'}" onclick="readNotif('${n.id}')">
+      <div class="notif-icon" style="background:${TYPE_CFG[n.type]?.color || TYPE_CFG.default.color}22;border:1px solid ${TYPE_CFG[n.type]?.color || TYPE_CFG.default.color}33;">${TYPE_CFG[n.type]?.icon || '🔔'}</div>
+      <div class="notif-body">
+        <div class="notif-title">${esc(n.title)}</div>
+        <div class="notif-msg">${esc(n.message)}</div>
+        <div class="notif-time">${fmtTime(n.ts)}</div>
+      </div>
+      <button class="notif-rm" onclick="event.stopPropagation();deleteNotif('${n.id}')">✕</button>
+    </div>`).join('');
+}
+
+function readNotif(id) { const n = notifications.find(x => x.id === id); if (n) { n.read = true; renderNotifs(); } }
+function deleteNotif(id) { notifications = notifications.filter(n => n.id !== id); renderNotifs(); }
+function markAllRead() { notifications.forEach(n => n.read = true); renderNotifs(); }
+function clearNotifs() { notifications = []; renderNotifs(); }
+
+function pushNotif(title, message, type = 'announcement') {
+  notifications.unshift({ id: uid(), title, message, type, read: false, ts: now() });
+  if (notifications.length > 50) notifications.pop();
+  renderNotifs();
+  const cfg = TYPE_CFG[type] || TYPE_CFG.default;
+  toast(cfg.icon, title, message, type);
+  // Bell ring
+  const bell = document.querySelector('[onclick="toggleNotifs()"]');
+  bell?.classList.remove('bell-ring'); void bell?.offsetWidth; bell?.classList.add('bell-ring');
+}
+
+let notifOpen = false;
+function toggleNotifs() { notifOpen = !notifOpen; document.getElementById('notifPanel').classList.toggle('open', notifOpen); renderNotifs(); }
+function closeNotifs() { notifOpen = false; document.getElementById('notifPanel').classList.remove('open'); }
+document.addEventListener('click', e => { if (notifOpen && !e.target.closest('#notifPanel') && !e.target.closest('[onclick="toggleNotifs()"]')) closeNotifs(); });
+
+/* ═══════════════════════════════════
+   PRODUCT DATA & CART
+═══════════════════════════════════ */
+const SIZES_ALL = ['XS','S','M','L','XL','2X'];
+
+let products = [
+  { id:uid(), name:'Distressed Graphic Tee', collection:'ORIGINS VOL.1', price:55, originalPrice:null, description:'Heavyweight cotton tee with distressed graphics. Oversized silhouette designed for the misunderstood.', materials:'100% 280gsm heavyweight cotton. Pre-washed. Screen printed graphics.', category:'Tops', sizes:['XS','S','M','L','XL','2X'], colors:[{name:'Void Black',hex:'#111111'},{name:'Blood Red',hex:'#8b0000'},{name:'Ash Grey',hex:'#6b6b6b'}], stock:{XS:10,S:18,M:22,L:15,XL:8,'2X':4}, badge:'new', images:['https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=600&auto=format&fit=crop'], createdAt: Date.now()-50000 },
+  { id:uid(), name:'Chaos Denim Jacket', collection:'ORIGINS VOL.1', price:180, originalPrice:220, description:'Acid-washed heavyweight denim with hand-painted chaos graphics. Every piece unique.', materials:'100% 14oz raw denim. Acid wash. Hand-painted details.', category:'Outerwear', sizes:['XS','S','M','L','XL'], colors:[{name:'Indigo Chaos',hex:'#1a2040'},{name:'Washed Black',hex:'#1a1a1a'}], stock:{XS:3,S:6,M:2,L:7,XL:1,'2X':0}, badge:'', images:['https://images.unsplash.com/photo-1503341504253-dff4815485f1?q=80&w=600&auto=format&fit=crop'], createdAt: Date.now()-40000 },
+  { id:uid(), name:'Fear Me Hoodie', collection:'MOST HATED DROP', price:95, originalPrice:null, description:'French terry heavyweight hoodie. Embroidered gothic lettering.', materials:'80% cotton 20% polyester french terry. 360gsm.', category:'Hoodies', sizes:['S','M','L','XL','2X'], colors:[{name:'Midnight',hex:'#080a12'},{name:'Crimson Night',hex:'#2a0010'},{name:'Cement',hex:'#8a8a8a'}], stock:{XS:0,S:5,M:14,L:9,XL:6,'2X':3}, badge:'', images:['https://images.unsplash.com/photo-1496747611176-843222e1e57c?q=80&w=600&auto=format&fit=crop'], createdAt: Date.now()-30000 },
+  { id:uid(), name:'Phantom Cargo Pants', collection:'MOST HATED DROP', price:140, originalPrice:null, description:'Technical cargo pants with 8 utility pockets. Built for movement, styled for chaos.', materials:'65% cotton 35% nylon ripstop.', category:'Bottoms', sizes:['XS','S','M','L','XL','2X'], colors:[{name:'All Black',hex:'#0d0d0d'},{name:'Olive Drab',hex:'#3d3d1a'}], stock:{XS:4,S:8,M:12,L:10,XL:5,'2X':2}, badge:'new', images:['https://images.unsplash.com/photo-1529139574466-a303027c1d8b?q=80&w=600&auto=format&fit=crop'], createdAt: Date.now()-20000 },
+  { id:uid(), name:'Shadow Longline Tee', collection:'MOST FEARED SERIES', price:70, originalPrice:null, description:'Extended length tee with asymmetric hem. The shadow that follows you.', materials:'100% 260gsm supima cotton. Garment dyed.', category:'Tops', sizes:['S','M','L','XL','2X'], colors:[{name:'Obsidian',hex:'#0a0a0a'},{name:'Deep Plum',hex:'#2a0030'},{name:'Bone',hex:'#e8e0d0'}], stock:{XS:0,S:12,M:18,L:14,XL:8,'2X':5}, badge:'', images:['https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop'], createdAt: Date.now()-10000 },
+  { id:uid(), name:'Chaos Chain Necklace', collection:'MOST FEARED SERIES', price:45, originalPrice:null, description:'Heavy-gauge stainless steel chain. Oxidized black finish.', materials:'316L stainless steel. PVD black coating.', category:'Accessories', sizes:['ONE SIZE'], colors:[{name:'Oxidized Black',hex:'#1a1a1a'},{name:'Silver',hex:'#c0c0c0'}], stock:{XS:0,S:0,M:0,L:0,XL:0,'2X':0,'ONE SIZE':30}, badge:'', images:['https://images.unsplash.com/photo-1504593811423-6dd665756598?q=80&w=600&auto=format&fit=crop'], createdAt: Date.now() },
+];
+
+let cart = [];
+let selectedSizes = {};
+let selectedColors = {};
+let sortOrder = 'default';
+let activeCollection = 'ALL';
+let promoDiscount = 0;
+let promoCode = '';
+
+function getTotalStock(p) { return Object.values(p.stock || {}).reduce((s, v) => s + (v || 0), 0); }
+function getStockStatus(p) {
+  const t = getTotalStock(p);
+  if (t === 0) return { cls:'stock-out', label:'SOLD OUT' };
+  if (t <= 10) return { cls:'stock-low', label:'LOW STOCK' };
+  return { cls:'stock-ok', label:'IN STOCK' };
+}
+function getCollections() { return ['ALL', ...new Set(products.map(p => p.collection))]; }
+function filteredProducts() { return activeCollection === 'ALL' ? products : products.filter(p => p.collection === activeCollection); }
+function sortedProducts(arr) {
+  const copy = [...arr];
+  if (sortOrder === 'price-asc') copy.sort((a,b) => a.price - b.price);
+  else if (sortOrder === 'price-desc') copy.sort((a,b) => b.price - a.price);
+  else if (sortOrder === 'name') copy.sort((a,b) => a.name.localeCompare(b.name));
+  return copy;
+}
+
+function sortShop(v) { sortOrder = v; renderShop(); }
+
+function renderShopTabs() {
+  document.getElementById('shopTabs').innerHTML = getCollections().map(c =>
+    `<div class="coll-tab ${c === activeCollection ? 'active' : ''}" onclick="setCollection('${esc(c)}')">${esc(c)}</div>`
+  ).join('');
+}
+
+function setCollection(c) { activeCollection = c; renderShopTabs(); renderShop(); }
+
+function renderShop() {
+  const grid = document.getElementById('shopGrid');
+  const empty = document.getElementById('shopEmpty');
+  const list = sortedProducts(filteredProducts());
+  document.getElementById('shopCount').textContent = list.length + ' item' + (list.length !== 1 ? 's' : '');
+  if (!list.length) { empty.style.display = 'block'; grid.innerHTML = ''; return; }
+  empty.style.display = 'none';
+  grid.innerHTML = list.map(p => buildProductCard(p)).join('');
+}
+
+function buildProductCard(p) {
+  const ss = getStockStatus(p);
+  const selColor = selectedColors[p.id] || p.colors[0];
+  const badgeHTML = p.badge ? `<div class="product-badge badge-${p.badge}">${p.badge.toUpperCase()}</div>` : '';
+  const colorsHTML = p.colors?.length ? `<div class="product-colors">${p.colors.slice(0,5).map((c,i) => `<div class="color-dot ${i===0?'selected':''}" style="background:${c.hex}" title="${c.name}" onclick="event.stopPropagation();"></div>`).join('')}</div>` : '';
+  return `
+    <div class="product-card" onclick="openProductModal('${p.id}')">
+      <div class="product-img-wrap">
+        ${p.images?.[0] ? `<img src="${p.images[0]}" alt="${esc(p.name)}" loading="lazy">` : `<div style="width:100%;height:340px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;color:var(--text-4);font-size:.65rem;letter-spacing:2px;">NO IMAGE</div>`}
+        ${badgeHTML}${colorsHTML}
+      </div>
+      <div class="product-body">
+        <div class="product-collection">${esc(p.collection)}</div>
+        <div class="product-name">${esc(p.name)}</div>
+        <div class="product-desc">${esc((p.description || '').substring(0,85))}${(p.description?.length||0)>85?'…':''}</div>
+        <div class="product-price-row">
+          <span class="product-price">$${p.price}</span>
+          ${p.originalPrice ? `<span class="product-price-orig">$${p.originalPrice}</span><span class="product-price-save">SAVE $${p.originalPrice-p.price}</span>` : ''}
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;">
+          <span class="product-stock ${ss.cls}">${ss.label}</span>
+          <span style="font-size:.58rem;color:var(--text-4);">${p.colors?.length||0} color${p.colors?.length!==1?'s':''}</span>
+        </div>
+        <button class="product-add" ${getTotalStock(p)===0?'disabled':''} onclick="event.stopPropagation();openProductModal('${p.id}')">
+          ${getTotalStock(p)===0?'SOLD OUT':'SELECT OPTIONS'}
+        </button>
+      </div>
+    </div>`;
+}
+
+/* PRODUCT MODAL */
+let modalState = { product: null, colorIdx: 0, size: null, qty: 1 };
+
+function openProductModal(id) {
+  const p = products.find(x => x.id === id); if (!p) return;
+  modalState = { product: p, colorIdx: 0, size: null, qty: 1 };
+  document.getElementById('productModal').classList.add('open');
+  renderProductModal();
+}
+function closeModal() { document.getElementById('productModal').classList.remove('open'); }
+document.getElementById('productModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+
+function renderProductModal() {
+  const p = modalState.product;
+  const total = getTotalStock(p);
+  const selColor = p.colors?.[modalState.colorIdx] || { name:'Default', hex:'#111' };
+  const sizeStock = sz => p.stock?.[sz] || 0;
+
+  document.getElementById('modalGallery').innerHTML = p.images?.[0]
+    ? `<img class="modal-main-img" src="${p.images[0]}" alt="${esc(p.name)}">`
+    : `<div style="width:100%;aspect-ratio:3/4;background:var(--surface-2);display:flex;align-items:center;justify-content:center;color:var(--text-4);font-size:.7rem;letter-spacing:2px;">NO IMAGE</div>`;
+
+  document.getElementById('modalInfo').innerHTML = `
+    <div class="modal-coll">${esc(p.collection)}</div>
+    <div class="modal-name">${esc(p.name)}</div>
+    <div class="modal-price-row">
+      <span class="modal-price">$${p.price}</span>
+      ${p.originalPrice ? `<span class="modal-price-orig">$${p.originalPrice}</span>` : ''}
+    </div>
+    <div class="modal-desc">${esc(p.description || '')}</div>
+    ${p.colors?.length ? `
+      <div class="selector-lbl">COLOR <span id="colorLabel">${esc(selColor.name)}</span></div>
+      <div class="color-palette">${p.colors.map((c,i) => `
+        <div class="palette-swatch ${i===modalState.colorIdx?'sel':''}" style="background:${c.hex}" onclick="selectColor(${i})" title="${c.name}">
+          <div class="palette-tip">${esc(c.name)}</div>
+        </div>`).join('')}</div>` : ''}
+    <div class="selector-lbl">SIZE <span style="color:var(--red);cursor:pointer;font-size:.56rem;" onclick="alert('XS:0-2  S:4-6  M:8-10  L:12-14  XL:16-18  2X:20-22')">SIZE GUIDE</span></div>
+    <div class="size-row" style="margin-bottom:18px;">${(p.sizes || SIZES_ALL).map(sz => {
+      const avail = sizeStock(sz) > 0;
+      const sel = sz === modalState.size;
+      return `<div class="size-chip ${sel?'active':''} ${!avail?'unavail':''}" onclick="${avail?`selectSize('${esc(sz)}')`:''}">${esc(sz)}${avail&&sizeStock(sz)<=3?`<br><span style="font-size:.45rem;opacity:.6;">${sizeStock(sz)} left</span>`:''}</div>`;
+    }).join('')}</div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
+      <div class="qty-ctrl">
+        <button class="qty-b" onclick="changeQty(-1)">−</button>
+        <input class="qty-n" id="modalQty" type="number" value="1" min="1" max="10" readonly>
+        <button class="qty-b" onclick="changeQty(1)">+</button>
+      </div>
+      <span class="product-stock ${getStockStatus(p).cls}">${getStockStatus(p).label}</span>
+    </div>
+    <button class="modal-add" id="modalAddBtn" ${total===0?'disabled':''} onclick="modalAddToCart()">
+      ${total===0?'SOLD OUT':'ADD TO CART'}
+    </button>
+    <div class="accord">
+      ${p.materials ? `<div class="accord-item"><button class="accord-trigger" onclick="toggleAccord(this)">MATERIALS <span class="accord-arrow">▾</span></button><div class="accord-body"><div class="accord-content">${esc(p.materials)}</div></div></div>` : ''}
+      <div class="accord-item"><button class="accord-trigger" onclick="toggleAccord(this)">SIZE & FIT <span class="accord-arrow">▾</span></button><div class="accord-body"><div class="accord-content">Runs true to size. For an oversized fit, size up. Model wears size M.</div></div></div>
+      <div class="accord-item"><button class="accord-trigger" onclick="toggleAccord(this)">SHIPPING <span class="accord-arrow">▾</span></button><div class="accord-body"><div class="accord-content">Free shipping over $150. Standard 3–7 business days. 30-day returns accepted.</div></div></div>
+    </div>`;
+}
+
+function selectColor(idx) { modalState.colorIdx = idx; renderProductModal(); }
+function selectSize(sz) { modalState.size = sz; renderProductModal(); }
+function changeQty(d) { modalState.qty = Math.max(1, Math.min(10, modalState.qty + d)); document.getElementById('modalQty').value = modalState.qty; }
+function toggleAccord(btn) { btn.classList.toggle('open'); btn.nextElementSibling.classList.toggle('open'); }
+
+function modalAddToCart() {
+  if (!modalState.size) { toast('⚠️','Select Size','Please choose a size','stock_warning'); return; }
+  const p = modalState.product;
+  const color = p.colors?.[modalState.colorIdx] || { name:'Default', hex:'#111' };
+  const key = `${p.id}-${modalState.size}-${color.hex}`;
+  const existing = cart.find(i => i.key === key);
+  if (existing) existing.qty += modalState.qty;
+  else cart.push({ key, productId: p.id, name: p.name, collection: p.collection, price: p.price, size: modalState.size, colorHex: color.hex, colorName: color.name, qty: modalState.qty, img: p.images?.[0] || '' });
+  renderCart(); openCart(); closeModal();
+  toast('🛍️', 'Added to Cart', `${p.name} (${modalState.size} · ${color.name})`,'drop');
+}
+
+/* CART */
+function openCart() { document.getElementById('cartDrawer').classList.add('open'); document.getElementById('cartBack').classList.add('open'); renderCart(); }
+function closeCart() { document.getElementById('cartDrawer').classList.remove('open'); document.getElementById('cartBack').classList.remove('open'); }
+
+function updateCartQty(key, d) { const i = cart.find(x => x.key === key); if (i) { i.qty += d; if (i.qty <= 0) cart = cart.filter(x => x.key !== key); } renderCart(); }
+function removeCartItem(key) { cart = cart.filter(x => x.key !== key); renderCart(); }
+
+function renderCart() {
+  const total = cart.reduce((s, i) => s + i.qty, 0);
+  document.getElementById('cartCount').textContent = total;
+  document.getElementById('cartMeta').textContent = total + ' item' + (total !== 1 ? 's' : '');
+  const el = document.getElementById('cartItems');
+  if (!cart.length) { el.innerHTML = '<div class="cart-empty"><span class="cart-empty-icon">🛍</span><div class="cart-empty-text">CART IS EMPTY</div></div>'; document.getElementById('cartSummary').innerHTML = ''; return; }
+  el.innerHTML = cart.map(item => `
+    <div class="cart-item">
+      <img class="cart-item-img" src="${item.img}" alt="${esc(item.name)}" onerror="this.style.display='none'">
+      <div class="cart-item-body">
+        <div class="cart-item-coll">${esc(item.collection)}</div>
+        <div class="cart-item-name">${esc(item.name)}</div>
+        <div class="cart-item-variant"><span class="cart-item-color-dot" style="background:${item.colorHex}"></span>${esc(item.colorName)} · ${esc(item.size)}</div>
+        <div class="cart-item-row">
+          <div class="cart-qty">
+            <button class="cart-qty-btn" onclick="updateCartQty('${item.key}',-1)">−</button>
+            <input class="cart-qty-num" value="${item.qty}" readonly>
+            <button class="cart-qty-btn" onclick="updateCartQty('${item.key}',1)">+</button>
+          </div>
+          <span class="cart-item-price">$${(item.price * item.qty).toFixed(2)}</span>
+          <button class="cart-rm" onclick="removeCartItem('${item.key}')">✕</button>
+        </div>
+      </div>
+    </div>`).join('');
+  const sub = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const disc = promoDiscount ? sub * promoDiscount : 0;
+  const ship = sub > 150 ? 0 : 9.95;
+  const total2 = sub - disc + ship;
+  document.getElementById('cartSummary').innerHTML = `
+    <div class="cart-sum-row"><span>SUBTOTAL</span><span>$${sub.toFixed(2)}</span></div>
+    ${disc ? `<div class="cart-sum-row" style="color:var(--gold-3);"><span>PROMO (${esc(promoCode)})</span><span>−$${disc.toFixed(2)}</span></div>` : ''}
+    <div class="cart-sum-row"><span>SHIPPING</span><span>${ship === 0 ? 'FREE' : '$' + ship.toFixed(2)}</span></div>
+    <div class="cart-sum-total"><span>TOTAL</span><span>$${total2.toFixed(2)}</span></div>`;
+}
+
+function applyPromo() {
+  const code = document.getElementById('promoInput').value.trim().toUpperCase();
+  const codes = { MENACE20: .2, FEAR10: .1, CHAOS15: .15 };
+  if (codes[code]) { promoDiscount = codes[code]; promoCode = code; renderCart(); toast('🎉','Promo Applied',`${Math.round(codes[code]*100)}% discount applied`,'payment'); }
+  else toast('❌','Invalid Code','That promo code is not valid','stock_warning');
+}
+
+/* HOME RENDER */
+function renderHome() {
+  // Cards
+  const cards = [
+    { num:'01', title:'Most Wanted', body:'Chased by attention. Desired by the culture. Every drop becomes a statement piece.' },
+    { num:'02', title:'Most Hated',  body:'Built for outsiders. Made for rebellion. Designed to disrupt every room you walk into.' },
+    { num:'03', title:'Most Feared', body:'Fearless expression. Darkness, chaos, energy, and ambition combined into every stitch.' },
+  ];
+  document.getElementById('homeCards').innerHTML = cards.map(c => `
+    <div style="background:var(--ink-3);border:1px solid var(--b);padding:40px 32px;position:relative;overflow:hidden;transition:.3s;" onmouseover="this.style.borderColor='var(--b-2)'" onmouseout="this.style.borderColor='var(--b)'">
+      <div style="font-family:var(--display);font-size:5rem;color:rgba(200,0,26,.06);position:absolute;top:10px;right:16px;line-height:1;">${c.num}</div>
+      <div style="font-family:var(--display);font-size:2rem;letter-spacing:2px;margin-bottom:14px;">${esc(c.title)}</div>
+      <div style="font-size:.8rem;color:var(--text-3);line-height:1.7;">${esc(c.body)}</div>
+    </div>`).join('');
+
+  // Featured products
+  document.getElementById('homeFeatured').innerHTML = products.slice(0,3).map(p => buildProductCard(p)).join('');
+
+  // Lookbook
+  const lbUrls = [
+    'https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=600&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?q=80&w=600&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1504593811423-6dd665756598?q=80&w=600&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1496747611176-843222e1e57c?q=80&w=600&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=600&auto=format&fit=crop',
+  ];
+  document.getElementById('lookbookGrid').innerHTML = lbUrls.map(url =>
+    `<div class="lookbook-item"><img src="${url}" alt="Lookbook" loading="lazy"></div>`).join('');
+}
+
+/* ═══════════════════════════════════
+   COUNTDOWN / DROPS
+═══════════════════════════════════ */
+let drops = [
+  { id: uid(), name: 'SUMMER COLLECTION 2026', date: new Date(Date.now() + 7 * 86400000).toISOString() },
+  { id: uid(), name: 'MENACE ORIGINS DROP',    date: new Date(Date.now() + 21 * 86400000).toISOString() },
+];
+let activeDrop = null, countdownInterval = null;
+
+function renderDrops() {
+  const sel = document.getElementById('dropSelector');
+  sel.innerHTML = '<option value="">— Select Drop —</option>' + drops.map(d => `<option value="${d.id}">${esc(d.name)}</option>`).join('');
+  document.getElementById('dropsList').innerHTML = drops.map(d => {
+    const isPast = new Date(d.date) <= new Date();
+    return `<div class="drop-item">
+      <div><div class="drop-item-name">${esc(d.name)}</div><div class="drop-item-date">${new Date(d.date).toLocaleString()}</div></div>
+      <span class="drop-status ${isPast?'drop-live':'drop-upcoming'}">${isPast?'LIVE':'UPCOMING'}</span>
+      <button onclick="removeDrop('${d.id}')" class="btn btn-ghost btn-xs">REMOVE</button>
+    </div>`;
+  }).join('');
+  if (drops.length) selectDrop(drops[0].id);
+}
+
+function selectDrop(id) {
+  const d = drops.find(x => x.id === id); if (!d) return;
+  activeDrop = d;
+  document.getElementById('dropActiveName').textContent = d.name;
+  document.getElementById('dropActiveDate').textContent = new Date(d.date).toLocaleString();
+  startCountdown();
+}
+
+function startCountdown() {
+  clearInterval(countdownInterval);
+  countdownInterval = setInterval(() => {
+    if (!activeDrop) return;
+    const diff = new Date(activeDrop.date) - Date.now();
+    if (diff <= 0) { ['cdD','cdH','cdM','cdS'].forEach(id => document.getElementById(id).textContent = '00'); clearInterval(countdownInterval); return; }
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    document.getElementById('cdD').textContent = String(d).padStart(2,'0');
+    document.getElementById('cdH').textContent = String(h).padStart(2,'0');
+    document.getElementById('cdM').textContent = String(m).padStart(2,'0');
+    document.getElementById('cdS').textContent = String(s).padStart(2,'0');
+  }, 1000);
+}
+
+function removeDrop(id) { drops = drops.filter(d => d.id !== id); renderDrops(); }
+
+function openScheduleModal() {
+  const name = prompt('Drop name:'); if (!name) return;
+  const dateStr = prompt('Drop date/time (YYYY-MM-DDTHH:MM):'); if (!dateStr) return;
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) { toast('❌','Invalid Date','Enter a valid date format','stock_warning'); return; }
+  drops.push({ id: uid(), name: name.trim(), date: date.toISOString() });
+  renderDrops();
+  toast('⏰','Drop Scheduled', name + ' scheduled for ' + date.toLocaleString(), 'announcement');
+  pushNotif('⏰ DROP SCHEDULED', name + ' — ' + date.toLocaleDateString(), 'announcement');
+}
+
+/* ═══════════════════════════════════
+   COMIC READER
+═══════════════════════════════════ */
+const TOTAL_PAGES = 111;
+let currentEp = 0;
+let currentPage = 0;
+let episodes = [
+  { id: uid(), name: 'Episode 1: Origins', pages: [] },
+  { id: uid(), name: 'Episode 2: The Fall', pages: [] },
+];
+
+function renderEpisodeTabs() {
+  document.getElementById('episodeTabs').innerHTML = episodes.map((ep, i) =>
+    `<button class="btn ${i === currentEp ? 'btn-primary' : 'btn-ghost'} btn-sm" onclick="loadEpisode(${i})">${esc(ep.name)}</button>`
+  ).join('') + `<button class="btn btn-ghost btn-sm" onclick="addEpisode()">+</button>`;
+}
+
+function loadEpisode(idx) { currentEp = idx; currentPage = 0; renderEpisodeTabs(); renderComicReader(); }
+function addEpisode() {
+  const name = `Episode ${episodes.length + 1}: New Arc`;
+  episodes.push({ id: uid(), name, pages: [] });
+  currentEp = episodes.length - 1;
+  renderEpisodeTabs(); renderComicReader();
+}
+
+function renderComicReader() {
+  const ep = episodes[currentEp];
+  if (!ep) return;
+  const total = Math.max(TOTAL_PAGES, ep.pages.length);
+  const pg = ep.pages[currentPage];
+
+  document.getElementById('readerTitle').textContent = ep.name;
+  document.getElementById('readerPageInfo').textContent = `${currentPage+1} / ${total}`;
+  document.getElementById('readerPageCounter').textContent = `${currentPage+1} / ${total}`;
+  document.getElementById('readerPageNum').textContent = currentPage + 1;
+
+  const img = document.getElementById('readerImg');
+  const placeholder = document.getElementById('readerPlaceholder');
+  if (pg) { img.src = pg; img.style.display = 'block'; placeholder.style.display = 'none'; }
+  else { img.style.display = 'none'; placeholder.style.display = 'flex'; }
+
+  // Sidebar
+  document.getElementById('chapterList').innerHTML = Array.from({ length: Math.min(total, 30) }, (_, i) => `
+    <div class="chapter-item ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">
+      ${ep.pages[i] ? '📄' : '⬜'} ${i === 0 ? 'COVER' : `PAGE ${i}`}
+      ${ep.pages[i] ? `<button onclick="event.stopPropagation();removePage(${i})" style="background:none;border:none;color:var(--text-4);cursor:pointer;float:right;font-size:.75rem;" onmouseover="this.style.color='var(--red-2)'" onmouseout="this.style.color='var(--text-4)'">✕</button>` : ''}
+    </div>`).join('');
+
+  // Thumbs
+  document.getElementById('pageThumbs').innerHTML = Array.from({ length: Math.min(total, 40) }, (_, i) =>
+    `<div class="page-thumb ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${ep.pages[i] ? `<img src="${ep.pages[i]}">` : i+1}</div>`).join('');
+}
+
+function goToPage(n) { const total = Math.max(TOTAL_PAGES, episodes[currentEp]?.pages.length || 0); currentPage = Math.max(0, Math.min(n, total-1)); renderComicReader(); }
+function comicPrev() { goToPage(currentPage - 1); }
+function comicNext() { goToPage(currentPage + 1); }
+function jumpPage(n) { goToPage(parseInt(n) - 1 || 0); }
+
+function importPages(input) {
+  const ep = episodes[currentEp]; if (!ep) return;
+  Array.from(input.files).forEach(f => { const url = URL.createObjectURL(f); ep.pages.push(url); });
+  input.value = '';
+  renderComicReader();
+  toast('📖','Pages Imported', `${input.files.length} page(s) added to ${ep.name}`, 'announcement');
+}
+
+function removePage(idx) { episodes[currentEp]?.pages.splice(idx, 1); renderComicReader(); }
+
+function exportComicPDF() {
+  toast('⬇️','Exporting','PDF export ready — integrate jsPDF for full output','announcement');
+}
+
+/* ═══════════════════════════════════
+   MEDIA LIBRARY
+═══════════════════════════════════ */
+let mediaFiles = [];
+
+function handleMediaUpload(input) { Array.from(input.files).forEach(f => addMediaFile(f)); input.value = ''; }
+function handleMediaDrop(e) { e.preventDefault(); document.getElementById('mediaZone').classList.remove('drag'); Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/') || f.type.startsWith('video/')).forEach(f => addMediaFile(f)); }
+function addMediaFile(f) { mediaFiles.push({ url: URL.createObjectURL(f), name: f.name, type: f.type.startsWith('video/') ? 'VIDEO' : 'IMAGE' }); renderMedia(); }
+function renderMedia() {
+  document.getElementById('mediaCount').textContent = mediaFiles.length + ' FILE' + (mediaFiles.length !== 1 ? 'S' : '');
+  document.getElementById('mediaGrid').innerHTML = mediaFiles.map((f, i) => `
+    <div class="media-item">
+      <span class="media-type">${f.type}</span>
+      ${f.type === 'VIDEO' ? `<video src="${f.url}" muted loop></video>` : `<img src="${f.url}" alt="${esc(f.name)}">`}
+      <div class="media-item-overlay">
+        <button class="media-act" onclick="removeMedia(${i})">REMOVE</button>
+        <button class="media-act" onclick="addToComicFromMedia('${f.url}')">USE IN COMIC</button>
+      </div>
+    </div>`).join('');
+}
+function removeMedia(i) { URL.revokeObjectURL(mediaFiles[i].url); mediaFiles.splice(i, 1); renderMedia(); }
+function clearMedia() { mediaFiles.forEach(f => URL.revokeObjectURL(f.url)); mediaFiles = []; renderMedia(); }
+function addToComicFromMedia(url) { episodes[currentEp]?.pages.push(url); renderComicReader(); showPage('comics'); toast('📖','Added','Image added to current episode','announcement'); }
+
+/* ═══════════════════════════════════
+   UNIVERSE DATABASE
+═══════════════════════════════════ */
+let universeEntries = [
+  { id:uid(), type:'character', name:'DaMenace', meta:'Leader of Menace Mafia · Ruthless and strategic', tags:['leader','menace','grunge'], color:'#c8001a', lore:'Leader of the most feared faction. Built from chaos.', enemies:['Kain'], faction:'Menace Mafia' },
+  { id:uid(), type:'character', name:'Valentina', meta:'Faction diplomat · Emotionally complex', tags:['diplomat','chaos','politics'], color:'#9030c0', lore:'Manipulative. Tied to district politics. Dangerous.', faction:'Shadow Council' },
+  { id:uid(), type:'location', name:'The Shattered District', meta:'Fractured city · Red sky · Mirror fields', tags:['city','mirrors','chaos'], color:'#c07828', lore:'Where reality breaks and power lives.' },
+  { id:uid(), type:'faction', name:'Menace Mafia', meta:'Underground empire · Most feared collective', tags:['faction','empire','underground'], color:'#c8001a', lore:'They run the streets. No one moves without permission.' },
+  { id:uid(), type:'event', name:'The Mirror Collapse', meta:'Reality fractures across all districts', tags:['event','chaos','turning point'], color:'#3060c0', lore:'The moment two dimensions collided.' },
+];
+let universeFilter_type = 'all';
+
+function renderUniverseGrid() {
+  const filtered = universeFilter_type === 'all' ? universeEntries : universeEntries.filter(e => e.type === universeFilter_type);
+  document.getElementById('universeGrid').innerHTML = filtered.map(e => `
+    <div class="universe-card" style="--c:${e.color};">
+      <div class="uc-type">${e.type.toUpperCase()}</div>
+      <div class="uc-name">${esc(e.name)}</div>
+      <div class="uc-meta">${esc(e.meta)}</div>
+      <div class="uc-tags">${(e.tags||[]).map(t => `<span class="uc-tag">${esc(t)}</span>`).join('')}</div>
+    </div>`).join('');
+}
+
+function universeFilter(type, btn) {
+  universeFilter_type = type;
+  document.querySelectorAll('#page-universe .btn').forEach(b => b.classList.remove('btn-primary'));
+  btn.classList.add('btn-primary'); btn.classList.remove('btn-ghost');
+  renderUniverseGrid();
+}
+
+function openUniverseForm() {
+  const name = prompt('Entry name:'); if (!name) return;
+  const type = prompt('Type (character/location/faction/event):') || 'character';
+  const meta = prompt('Short description:') || '';
+  const lore  = prompt('Full lore text:') || '';
+  universeEntries.unshift({ id:uid(), type, name:name.trim(), meta, lore, tags:[], color:'#c8001a' });
+  renderUniverseGrid();
+  toast('📚','Entry Added', name + ' added to Universe DB', 'announcement');
+}
+
+/* ═══════════════════════════════════
+   AI LAB — POLLINATIONS AI
+═══════════════════════════════════ */
+const STYLE_MAP = {
+  Grunge:'dark grunge aesthetic red tones gritty texture distressed',
+  Cyberpunk:'cyberpunk neon city glowing lights futuristic dark atmosphere',
+  Streetwear:'streetwear fashion urban editorial',
+  Y2K:'Y2K chrome metallic early 2000s digital art',
+  'Dark Fantasy':'dark fantasy cinematic lighting dramatic shadows',
+  'Horror Manga':'horror manga high contrast black ink unsettling',
+  'Anime Noir':'anime noir dramatic cinematic angles',
+};
+const polURL = (prompt, seed) => `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=768&height=768&seed=${seed||Math.floor(Math.random()*99999)}&nologo=true&enhance=true`;
+let lastImageURL = '';
+
+function loadingHTML(msg) {
+  return `<div style="text-align:center;padding:60px 40px;width:100%"><div class="spinner"></div><div style="font-family:var(--display);font-size:1.6rem;letter-spacing:4px;">${esc(msg)}</div><div style="font-size:.7rem;letter-spacing:2px;color:var(--text-4);margin-top:8px;">POLLINATIONS AI · FREE & UNLIMITED</div></div>`;
+}
+
+async function generateImage() {
+  const prompt = document.getElementById('imgPrompt').value.trim();
+  if (!prompt) { toast('⚠️','No Prompt','Enter a description first','stock_warning'); return; }
+  const style = document.getElementById('imgStyle').value;
+  const details = document.getElementById('imgDetails').value.trim();
+  const box = document.getElementById('imgPreview');
+  box.innerHTML = loadingHTML('GENERATING...');
+  const fullPrompt = `${prompt}${details?', '+details:''}, ${STYLE_MAP[style]||style}, high quality cinematic`;
+  lastImageURL = polURL(fullPrompt);
+  box.innerHTML = `<div style="width:100%;position:relative;">
+    <img src="${lastImageURL}" style="width:100%;display:block;min-height:400px;background:var(--ink-3);"
+      onerror="this.parentElement.innerHTML='<div style=\\'padding:40px;text-align:center;\\'><div style=\\'font-family:var(--display);font-size:1.5rem;color:var(--red)\\'>GENERATION FAILED</div><div style=\\'font-size:.75rem;color:var(--text-4);margin-top:10px;\\'>Try a different prompt</div></div>'">
+    <div style="padding:12px 16px;background:var(--ink-2);display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:.6rem;letter-spacing:2px;color:var(--text-4);">POLLINATIONS AI</span>
+      <a href="${lastImageURL}" download target="_blank" style="font-size:.68rem;color:var(--red-2);font-weight:700;letter-spacing:2px;text-decoration:none;">⬇ DOWNLOAD</a>
+    </div>
+  </div>`;
+}
+
+function downloadLastImage() { if (lastImageURL) window.open(lastImageURL,'_blank'); else toast('⚠️','No Image','Generate an image first','stock_warning'); }
+
+function switchLabTab(tab, el) {
+  document.querySelectorAll('.lab-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.lab-tab-content').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('labcontent-' + tab).classList.add('active');
+}
+
+async function generateComic() {
+  const prompt = document.getElementById('comicPrompt').value.trim();
+  if (!prompt) { toast('⚠️','No Prompt','Enter a scene description','stock_warning'); return; }
+  const style = document.getElementById('comicStyle').value;
+  const mode  = document.getElementById('comicMode').value;
+  const details = document.getElementById('comicDetails').value.trim();
+  const box = document.getElementById('comicPreview');
+  const base = prompt + (details ? '. ' + details : '');
+  const sfx = STYLE_MAP[style] || style;
+
+  if (mode === 'Storyboard') {
+    box.innerHTML = `<div class="storyboard" style="padding:20px;width:100%;">${
+      [['PANEL 1 — INTRO', `${prompt}. Establishing shot. ${sfx}.`],
+       ['PANEL 2 — CONFLICT', `Emotional tension rises. Close-up. ${sfx}.`],
+       ['PANEL 3 — CHAOS', `Chaos erupts. ${sfx}.`],
+       ['PANEL 4 — CLIMAX', `Cinematic finale. ${sfx}.`]
+      ].map(([t,d]) => `<div class="story-block"><h3>${t}</h3><p>${d}</p></div>`).join('')}
+    </div>`;
+    return;
+  }
+
+  const descs = mode === 'Character Sheet'
+    ? [`Full body character sheet. ${base}. ${sfx}. Front view.`,`Side profile. ${base}. ${sfx}.`,`Action pose. ${base}. ${sfx}.`,`Close-up face. ${base}. ${sfx}.`]
+    : [`Panel 1 establishing shot. ${base}. ${sfx}.`,`Panel 2 emotional close-up. ${base}. ${sfx}.`,`Panel 3 action moment. ${base}. ${sfx}.`,`Panel 4 cinematic finale. ${base}. ${sfx}.`];
+
+  box.innerHTML = `<div class="panel-grid" id="comicPanelGrid" style="padding:16px;width:100%;">${descs.map((_,i) => `<div class="panel-cell" id="apanel${i}"><div class="spinner" style="width:28px;height:28px;"></div></div>`).join('')}</div>`;
+
+  const urls = descs.map((d,i) => polURL(d, 1000 + i * 777));
+  urls.forEach((url, i) => {
+    const img = new Image();
+    img.onload = () => {
+      const el = document.getElementById('apanel' + i);
+      if (el) el.innerHTML = `<img src="${url}"><div class="panel-label">PANEL ${i+1}</div>`;
+    };
+    img.onerror = () => { const el = document.getElementById('apanel' + i); if (el) el.textContent = `PANEL ${i+1} FAILED`; };
+    img.src = url;
+  });
+}
+
+function saveToReader() { toast('📖','Saved','Connect comic reader to save generated panels','announcement'); }
+
+function generateStoryline() {
+  const char    = document.getElementById('storyChar').value.trim() || 'DaMenace';
+  const genre   = document.getElementById('storyGenre').value;
+  const numArcs = parseInt(document.getElementById('storyArcs').value) || 3;
+  const setting = document.getElementById('storySetting').value.trim() || 'Houston 2040';
+  const theme   = document.getElementById('storyTheme').value.trim() || 'identity and survival';
+  const box     = document.getElementById('storylinePreview');
+  box.innerHTML = loadingHTML('BUILDING UNIVERSE...');
+  setTimeout(() => {
+    const arcDefs = [
+      `${char} discovers their true nature in ${setting}. Everything unravels. ${theme} becomes the driving force as they face their darkest shadow.`,
+      `Betrayal from within. ${char} loses everything. Former allies reveal their true agenda. ${genre} turns against them.`,
+      `From the ruins, ${char} rebuilds. ${setting} becomes hunting ground. A new identity forged on ${theme}.`,
+      `All forces unite against ${char}. Epic confrontation. ${genre} at its peak. Survival not guaranteed.`,
+      `${char} transcends mortal limits. The final truth about ${theme} revealed. The cycle begins again.`,
+      `A fractured mirror dimension opens. ${char} faces their alternate self — the version who chose differently.`,
+      `All timelines converge. ${char} must unite enemies, ghosts, and allies for one final war.`,
+    ].slice(0, numArcs);
+    box.innerHTML = `<div style="padding:28px;width:100%;">
+      <div style="font-family:var(--display);font-size:2.2rem;letter-spacing:4px;margin-bottom:4px;">${esc(char).toUpperCase()}</div>
+      <div style="font-size:.62rem;letter-spacing:4px;color:var(--red);text-transform:uppercase;margin-bottom:28px;">${esc(genre)} · ${esc(setting)} · ${numArcs} ARC UNIVERSE</div>
+      <div class="storyboard">${arcDefs.map((d,i) => {
+        const titles = ['ORIGIN','THE FALL','CHAOS REBORN','THE RECKONING','ASCENSION','MIRROR WORLD','FINAL WAR'];
+        return `<div class="story-block"><h3>ARC ${i+1}: ${titles[i]||'ARC '+( i+1)}</h3><p>${esc(d)}</p></div>`;
+      }).join('')}</div>
+    </div>`;
+  }, 1200);
+}
+
+function exportStoryPDF() { toast('⬇️','Export','Integrate jsPDF for full PDF output','announcement'); }
+
+function generateCharacter() {
+  const name   = document.getElementById('charName').value.trim() || 'DaMenace';
+  const faction= document.getElementById('charFaction').value.trim() || 'Unknown';
+  const appear = document.getElementById('charAppearance').value.trim();
+  const powers = document.getElementById('charPowers').value.trim();
+  const lore   = document.getElementById('charLore').value.trim();
+  const box    = document.getElementById('charPreview');
+  box.innerHTML = loadingHTML('BUILDING CHARACTER...');
+  setTimeout(() => {
+    box.innerHTML = `<div style="padding:28px;width:100%;">
+      <div style="font-family:var(--display);font-size:2.5rem;letter-spacing:5px;margin-bottom:4px;">${esc(name).toUpperCase()}</div>
+      <div style="font-size:.6rem;letter-spacing:4px;color:var(--red);text-transform:uppercase;margin-bottom:20px;">FACTION: ${esc(faction).toUpperCase()}</div>
+      ${appear ? `<div class="story-block"><h3>APPEARANCE</h3><p>${esc(appear)}</p></div>` : ''}
+      ${powers ? `<div class="story-block"><h3>ABILITIES</h3><p>${esc(powers)}</p></div>` : ''}
+      ${lore   ? `<div class="story-block"><h3>ORIGIN</h3><p>${esc(lore)}</p></div>` : ''}
+      <img src="${polURL(`Full body character art of ${name}, ${appear||'dark mysterious figure'}, ${powers?'with powers: '+powers:''}, dark grunge cinematic style, comic book character sheet`)}" style="width:100%;margin-top:16px;" loading="lazy" onerror="this.style.display='none'">
+    </div>`;
+  }, 800);
+}
+
+function saveCharToDB() {
+  const name = document.getElementById('charName').value.trim(); if (!name) { toast('⚠️','No Name','Enter a character name first','stock_warning'); return; }
+  universeEntries.unshift({ id:uid(), type:'character', name, meta:'Auto-generated via AI Lab', tags:['ai-generated'], color:'#c8001a', faction: document.getElementById('charFaction').value || 'Unknown', lore: document.getElementById('charLore').value || '' });
+  toast('📚','Saved to Universe','Character saved to Universe Database','announcement');
+}
+
+/* ═══════════════════════════════════
+   ADMIN PANEL
+═══════════════════════════════════ */
+const ADMIN_TABS = ['inventory','products','drops','analytics','upload'];
+let adminTab = 'inventory';
+
+function renderAdmin() {
+  const navItems = [
+    { id:'inventory',  icon:'📊', label:'Inventory' },
+    { id:'products',   icon:'👕', label:'Products'  },
+    { id:'drops',      icon:'🔥', label:'Drops'     },
+    { id:'analytics',  icon:'📈', label:'Analytics' },
+    { id:'upload',     icon:'⬆',  label:'Upload'    },
+  ];
+  document.getElementById('adminNav').innerHTML = navItems.map(n =>
+    `<div class="admin-nav-item ${adminTab===n.id?'active':''}" onclick="switchAdminTab('${n.id}')">${n.icon} &nbsp;${n.label}</div>`
+  ).join('');
+  renderAdminContent();
+}
+
+function switchAdminTab(tab) { adminTab = tab; renderAdmin(); }
+
+function renderAdminContent() {
+  const el = document.getElementById('adminContent');
+  if (adminTab === 'inventory') {
+    const total = products.length;
+    const stock = products.reduce((s, p) => s + getTotalStock(p), 0);
+    const low   = products.filter(p => getTotalStock(p) > 0 && getTotalStock(p) <= 10).length;
+    const sold  = products.filter(p => getTotalStock(p) === 0).length;
+    const value = products.reduce((s, p) => s + p.price * getTotalStock(p), 0);
+    const colls = [...new Set(products.map(p => p.collection))].length;
+    el.innerHTML = `
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-label">Products</div><div class="stat-value">${total}</div></div>
+        <div class="stat-card" style="--c:var(--gold);"><div class="stat-label">Total Stock</div><div class="stat-value gold">${stock}</div></div>
+        <div class="stat-card" style="--c:var(--warn);"><div class="stat-label">Low Stock</div><div class="stat-value">${low}</div></div>
+        <div class="stat-card" style="--c:var(--red-2);"><div class="stat-label">Sold Out</div><div class="stat-value red">${sold}</div></div>
+        <div class="stat-card" style="--c:#44e88a;"><div class="stat-label">Inventory Value</div><div class="stat-value green">$${value.toLocaleString()}</div></div>
+        <div class="stat-card"><div class="stat-label">Collections</div><div class="stat-value">${colls}</div></div>
+      </div>
+      <table class="data-table">
+        <thead><tr><th>IMG</th><th>NAME</th><th>COLLECTION</th><th>PRICE</th><th>STOCK</th><th>STATUS</th><th>ACTIONS</th></tr></thead>
+        <tbody>${products.map(p => {
+          const ss = getStockStatus(p); const s = getTotalStock(p);
+          return `<tr>
+            <td>${p.images?.[0]?`<img src="${p.images[0]}" style="width:36px;height:44px;object-fit:cover;border:1px solid var(--b);">`:'<div style="width:36px;height:44px;background:var(--surface);border:1px solid var(--b);"></div>'}</td>
+            <td><strong>${esc(p.name)}</strong><br><span style="font-size:.6rem;color:var(--text-3);">${esc(p.category||'')}</span></td>
+            <td style="color:var(--red);font-size:.7rem;">${esc(p.collection)}</td>
+            <td><strong>$${p.price}</strong></td>
+            <td>${s}</td>
+            <td><span class="product-stock ${ss.cls}">${ss.label}</span></td>
+            <td><div style="display:flex;gap:5px;"><button class="btn btn-ghost btn-xs" onclick="openProductModal('${p.id}')">VIEW</button><button class="btn btn-ghost btn-xs" style="color:var(--red-2);border-color:rgba(200,0,26,.3);" onclick="deleteProduct('${p.id}')">DELETE</button></div></td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>`;
+  }
+  else if (adminTab === 'products') {
+    el.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <h3 style="font-family:var(--display);letter-spacing:3px;font-size:1.1rem;">ALL PRODUCTS</h3>
+        <button class="btn btn-primary btn-sm" onclick="openAddProductForm()">+ ADD PRODUCT</button>
+      </div>
+      <div id="productFormWrap"></div>
+      <div class="grid-auto">${products.map(p => buildProductCard(p)).join('')}</div>`;
+  }
+  else if (adminTab === 'drops') {
+    el.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <h3 style="font-family:var(--display);letter-spacing:3px;font-size:1.1rem;">DROP MANAGEMENT</h3>
+        <button class="btn btn-primary btn-sm" onclick="openScheduleModal()">+ SCHEDULE DROP</button>
+      </div>
+      <div class="drops-list">${drops.map(d => {
+        const past = new Date(d.date) <= new Date();
+        return `<div class="drop-item"><div><div class="drop-item-name">${esc(d.name)}</div><div class="drop-item-date">${new Date(d.date).toLocaleString()}</div></div><span class="drop-status ${past?'drop-live':'drop-upcoming'}">${past?'LIVE':'UPCOMING'}</span><button onclick="removeDrop('${d.id}')" class="btn btn-ghost btn-xs">REMOVE</button></div>`;
+      }).join('')}</div>`;
+  }
+  else if (adminTab === 'analytics') {
+    const totalSales = Math.floor(Math.random() * 400 + 100);
+    const revenue = products.reduce((s,p) => s + p.price * Math.floor(Math.random()*8), 0);
+    el.innerHTML = `
+      <div class="stat-grid">
+        <div class="stat-card" style="--c:#44e88a;"><div class="stat-label">Total Orders</div><div class="stat-value green">${totalSales}</div></div>
+        <div class="stat-card" style="--c:var(--gold);"><div class="stat-label">Revenue</div><div class="stat-value gold">$${revenue.toLocaleString()}</div></div>
+        <div class="stat-card"><div class="stat-label">Cart Items</div><div class="stat-value">${cart.reduce((s,i)=>s+i.qty,0)}</div></div>
+        <div class="stat-card" style="--c:var(--red-2);"><div class="stat-label">Active Drops</div><div class="stat-value red">${drops.filter(d=>new Date(d.date)>new Date()).length}</div></div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--b);padding:22px;margin-top:16px;">
+        <div style="font-size:.6rem;letter-spacing:3px;color:var(--text-3);text-transform:uppercase;margin-bottom:14px;">COLLECTION PERFORMANCE</div>
+        ${[...new Set(products.map(p=>p.collection))].map(c => {
+          const ps = products.filter(p=>p.collection===c);
+          const pct = Math.floor(Math.random()*80+20);
+          return `<div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;font-size:.7rem;margin-bottom:5px;"><span>${esc(c)}</span><span style="color:var(--gold);">${pct}%</span></div><div style="height:4px;background:var(--surface-2);"><div style="height:100%;background:var(--red);width:${pct}%;transition:.6s;"></div></div></div>`;
+        }).join('')}
+      </div>`;
+  }
+  else if (adminTab === 'upload') {
+    el.innerHTML = `
+      <h3 style="font-family:var(--display);letter-spacing:3px;font-size:1.1rem;margin-bottom:20px;">QUICK PRODUCT UPLOAD</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+        <div class="form-group"><label class="form-label">Product Name *</label><input class="form-input" id="up-name" placeholder="e.g. Chaos Denim Jacket"></div>
+        <div class="form-group"><label class="form-label">Collection *</label><input class="form-input" id="up-coll" placeholder="e.g. ORIGINS VOL.1"></div>
+        <div class="form-group"><label class="form-label">Price ($) *</label><input class="form-input" type="number" id="up-price" placeholder="120"></div>
+        <div class="form-group"><label class="form-label">Category</label><select class="form-select" id="up-cat"><option>Tops</option><option>Bottoms</option><option>Outerwear</option><option>Hoodies</option><option>Accessories</option></select></div>
+      </div>
+      <div class="form-group" style="margin-bottom:16px;"><label class="form-label">Description *</label><textarea class="form-textarea" id="up-desc" placeholder="Product description..."></textarea></div>
+      <div class="upload-zone" id="adminUploadZone" onclick="document.getElementById('up-img').click()" style="margin-bottom:16px;">
+        <span class="upload-zone-icon">📸</span>
+        <div class="upload-zone-title">UPLOAD PRODUCT IMAGES</div>
+        <div class="upload-zone-sub">Click or drag images · First image = cover · Multiple supported</div>
+      </div>
+      <input type="file" id="up-img" multiple accept="image/*" style="display:none" onchange="handleUploadImgs(this)">
+      <div id="up-img-previews" class="img-preview-grid"></div>
+      <button class="btn btn-primary" style="margin-top:16px;" onclick="quickUploadProduct()">⬆ PUBLISH PRODUCT</button>`;
+  }
+}
+
+let uploadImgs = [];
+function handleUploadImgs(input) {
+  Array.from(input.files).forEach(f => { const url = URL.createObjectURL(f); uploadImgs.push(url); });
+  document.getElementById('up-img-previews').innerHTML = uploadImgs.map(url => `<img class="img-preview" src="${url}">`).join('');
+  input.value = '';
+}
+
+function quickUploadProduct() {
+  const name  = document.getElementById('up-name')?.value?.trim();
+  const coll  = document.getElementById('up-coll')?.value?.trim();
+  const price = parseFloat(document.getElementById('up-price')?.value);
+  const desc  = document.getElementById('up-desc')?.value?.trim();
+  const cat   = document.getElementById('up-cat')?.value || 'Tops';
+  if (!name || !coll || !price || !desc) { toast('⚠️','Missing Fields','Fill in all required fields','stock_warning'); return; }
+  const newProduct = { id:uid(), name, collection:coll, price, originalPrice:null, description:desc, materials:'', category:cat, sizes:['XS','S','M','L','XL','2X'], colors:[{name:'Black',hex:'#111111'}], stock:{XS:10,S:15,M:20,L:15,XL:10,'2X':5}, badge:'new', images:uploadImgs.length?[...uploadImgs]:[], createdAt:Date.now() };
+  products.unshift(newProduct);
+  uploadImgs = [];
+  switchAdminTab('inventory');
+  toast('✅','Product Published',`${name} is now live in the store`,'payment');
+  pushNotif('🔥 NEW PRODUCT: ' + name, `"${name}" just added to ${coll}`, 'drop');
+}
+
+function deleteProduct(id) {
+  if (!confirm('Delete this product?')) return;
+  products = products.filter(p => p.id !== id);
+  renderAdmin();
+  toast('🗑️','Deleted','Product removed from catalog','announcement');
+}
+
+function openAddProductForm() {
+  uploadImgs = [];
+  switchAdminTab('upload');
+}
+
+/* ═══════════════════════════════════
+   INTERSECTION OBSERVER (re-apply for dynamically added elements)
+═══════════════════════════════════ */
+function observeFadeUps() {
+  document.querySelectorAll('.fade-up:not(.in)').forEach(el => fadeObserver.observe(el));
+}
+
+/* ═══════════════════════════════════
+   INITIALISE
+═══════════════════════════════════ */
+(function init() {
+  renderHome();
+  renderNotifs();
+  renderCart();
+  renderShopTabs();
+  renderShop();
+  renderDrops();
+  renderEpisodeTabs();
+  renderComicReader();
+  renderUniverseGrid();
+  renderAdmin();
+
+  // Initial notification
+  setTimeout(() => {
+    pushNotif('🔥 WELCOME TO MENACE 2 SOCIETY', 'The universe is live. Explore drops, comics, and the AI lab.', 'announcement');
+  }, 2000);
+
+  // Drop admin zone drag feedback
+  const adminZone = document.getElementById('adminUploadZone');
+  if (adminZone) {
+    adminZone.addEventListener('dragover', e => { e.preventDefault(); adminZone.classList.add('drag'); });
+    adminZone.addEventListener('dragleave', () => adminZone.classList.remove('drag'));
+  }
+})();
+</script>
+</body>
+</html>
