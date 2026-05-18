@@ -1,0 +1,12 @@
+/apps/web
+
+  /src
+    /components
+    /pages
+    /layouts
+    /hooks
+    /providers
+    /store
+    /services
+    /styles
+    /utils
